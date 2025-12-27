@@ -1,0 +1,15 @@
+[submodule "hp48-puzzle-bobble"]
+	path = hp48-puzzle-bobble
+	url = git@github.com:Oichkatzelesfrettschen/hp48-puzzle-bobble.git
+[submodule "puzzle-bobble-clone-libgdx"]
+	path = puzzle-bobble-clone-libgdx
+	url = git@github.com:Oichkatzelesfrettschen/Puzzle-Bobble-Clone.git
+[submodule "bubble-blast-saga"]
+	path = bubble-blast-saga
+	url = git@github.com:Oichkatzelesfrettschen/Bubble-Blast-Saga.git
+[submodule "zorx"]
+	path = zorx
+	url = git@github.com:Oichkatzelesfrettschen/zorx.git
+[submodule "frozen-bubble"]
+	path = frozen-bubble
+	url = git@github.com:Oichkatzelesfrettschen/frozen-bubble.git
