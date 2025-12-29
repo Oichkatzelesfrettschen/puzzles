@@ -19,6 +19,14 @@
 #   make cross-check-all    - Test all available cross-compilers
 #   make ARCH=arm           - Build for specific architecture
 #
+# Docker Build Environment:
+#   make docker-build       - Build Docker image with all cross-compilers
+#   make docker-shell       - Interactive shell in Docker environment
+#   make docker-make        - Run make inside Docker
+#   make docker-cross-all   - Run cross-check-all inside Docker
+#   make DOCKER=1 <target>  - Run any target inside Docker
+#   make docker-pdp11       - Build for PDP-11 using Docker
+#
 # Validation:
 #   make audit              - Full static analysis (lint+check+complexity)
 #   make lint               - Quick cppcheck
@@ -33,6 +41,26 @@ CC ?= gcc
 AR ?= ar
 CPPCHECK ?= cppcheck
 SHELLCHECK ?= shellcheck
+
+#=============================================================================
+# Docker Configuration
+#=============================================================================
+
+# Docker image names
+DOCKER_IMAGE ?= pb-core-build
+DOCKER_IMAGE_FULL ?= pb-core-build:full
+DOCKER_IMAGE_MINIMAL ?= pb-core-build:minimal
+DOCKER_PDP11_IMAGE ?= jameshagerman/gcc-pdp11-aout
+
+# Docker run options
+DOCKER_RUN_OPTS ?= --rm -v $(CURDIR):/work -w /work
+DOCKER_RUN := docker run $(DOCKER_RUN_OPTS)
+
+# Enable Docker mode: DOCKER=1 make <target>
+ifdef DOCKER
+    # Wrap compiler calls through Docker
+    DOCKER_PREFIX := $(DOCKER_RUN) $(DOCKER_IMAGE)
+endif
 
 # C Standard selection (c17|c11|c99|c89)
 C_STD ?= c17
@@ -158,6 +186,9 @@ CORE_SRCS := $(wildcard $(SRC_DIR)/core/*.c)
 DATA_SRCS := $(wildcard $(SRC_DIR)/data/*.c)
 VENDOR_SRCS := $(wildcard $(SRC_DIR)/vendor/*.c)
 LIB_SRCS := $(CORE_SRCS) $(DATA_SRCS) $(VENDOR_SRCS)
+
+# Core sources without float-dependent modules (for 8-bit targets without FPU)
+CORE_SRCS_NOFLOAT := $(filter-out $(SRC_DIR)/core/pb_color.c $(SRC_DIR)/core/pb_cvd.c,$(CORE_SRCS))
 
 # Platform files (require SDL2)
 SDL2_SRCS := $(SRC_DIR)/platform/pb_sdl2.c
@@ -507,7 +538,185 @@ cross-z88dk:
 cross-6502:
 	@echo -n "6502 (cc65)... "
 	@if command -v cc65 >/dev/null 2>&1; then \
-		cc65 -t none -I$(INC_DIR) $(SRC_DIR)/core/pb_hex.c 2>&1 | head -1 | grep -q "error\|Error" && echo "C99/SIZE" || echo "OK"; \
+		cc65 -t none -I$(INC_DIR) $(SRC_DIR)/core/pb_hex.c 2>&1 | head -1 | grep -q "error\|Error" && echo "C89 only" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+# LLVM-MOS: Modern C99/C++11 6502 compiler (no float support, requires fixed-point)
+# Install: Download from https://github.com/llvm-mos/llvm-mos-sdk/releases
+cross-6502-llvm:
+	@echo -n "6502 (LLVM-MOS)... "
+	@if [ -x /opt/llvm-mos/bin/mos-common-clang ]; then \
+		/opt/llvm-mos/bin/mos-common-clang -fsyntax-only -DPB_USE_FIXED_POINT=1 -DPB_FIXED_FORMAT=2 -I$(INC_DIR) $(SRC_DIR)/core/pb_hex.c 2>&1 | head -1 | grep -q "error\|Error" && echo "FAIL" || echo "OK (Q8.8)"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-c64:
+	@echo -n "C64 (LLVM-MOS)... "
+	@if [ -x /opt/llvm-mos/bin/mos-c64-clang ]; then \
+		/opt/llvm-mos/bin/mos-c64-clang -fsyntax-only -DPB_USE_FIXED_POINT=1 -DPB_FIXED_FORMAT=2 -I$(INC_DIR) $(SRC_DIR)/core/pb_hex.c 2>&1 | head -1 | grep -q "error\|Error" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-nes:
+	@echo -n "NES (LLVM-MOS)... "
+	@if [ -x /opt/llvm-mos/bin/mos-nes-clang ]; then \
+		/opt/llvm-mos/bin/mos-nes-clang -fsyntax-only -DPB_USE_FIXED_POINT=1 -DPB_FIXED_FORMAT=2 -I$(INC_DIR) $(SRC_DIR)/core/pb_hex.c 2>&1 | head -1 | grep -q "error\|Error" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-atari2600:
+	@echo -n "Atari 2600 (LLVM-MOS)... "
+	@if [ -x /opt/llvm-mos/bin/mos-atari2600-4k-clang ]; then \
+		/opt/llvm-mos/bin/mos-atari2600-4k-clang -fsyntax-only -DPB_USE_FIXED_POINT=1 -DPB_FIXED_FORMAT=2 -I$(INC_DIR) $(SRC_DIR)/core/pb_hex.c 2>&1 | head -1 | grep -q "error\|Error" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+# RISC-V Embedded (bare-metal with picolibc)
+# Install: sudo apt install gcc-riscv64-unknown-elf picolibc-riscv64-unknown-elf
+PICOLIBC_RISCV_INC := /usr/lib/picolibc/riscv64-unknown-elf/include
+
+cross-riscv32:
+	@echo -n "RISC-V 32 (embedded)... "
+	@if command -v riscv64-unknown-elf-gcc >/dev/null 2>&1; then \
+		if [ -d "$(PICOLIBC_RISCV_INC)" ]; then \
+			riscv64-unknown-elf-gcc -march=rv32imc -mabi=ilp32 -isystem $(PICOLIBC_RISCV_INC) $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK (picolibc)"; \
+		else \
+			riscv64-unknown-elf-gcc -march=rv32imc -mabi=ilp32 $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "NEEDS PICOLIBC" || echo "OK"; \
+		fi; \
+	else echo "NOT INSTALLED"; fi
+
+cross-riscv64-elf:
+	@echo -n "RISC-V 64 (embedded)... "
+	@if command -v riscv64-unknown-elf-gcc >/dev/null 2>&1; then \
+		if [ -d "$(PICOLIBC_RISCV_INC)" ]; then \
+			riscv64-unknown-elf-gcc -march=rv64gc -mabi=lp64d -isystem $(PICOLIBC_RISCV_INC) $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK (picolibc)"; \
+		else \
+			riscv64-unknown-elf-gcc -march=rv64gc -mabi=lp64d $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "NEEDS PICOLIBC" || echo "OK"; \
+		fi; \
+	else echo "NOT INSTALLED"; fi
+
+# --- New Linux Cross-Compilers (Ubuntu 24.04) ---
+
+cross-alpha:
+	@echo -n "Alpha (DEC)... "
+	@if command -v alpha-linux-gnu-gcc >/dev/null 2>&1; then \
+		alpha-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-arc:
+	@echo -n "ARC (Synopsys)... "
+	@if command -v arc-linux-gnu-gcc >/dev/null 2>&1; then \
+		arc-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-hppa:
+	@echo -n "HP-PA (PA-RISC)... "
+	@if command -v hppa-linux-gnu-gcc >/dev/null 2>&1; then \
+		hppa-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-hppa64:
+	@echo -n "HP-PA64 (PA-RISC 2.0)... "
+	@if command -v hppa64-linux-gnu-gcc >/dev/null 2>&1; then \
+		hppa64-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-mips:
+	@echo -n "MIPS (big-endian)... "
+	@if command -v mips-linux-gnu-gcc >/dev/null 2>&1; then \
+		mips-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-mipsel:
+	@echo -n "MIPS (little-endian)... "
+	@if command -v mipsel-linux-gnu-gcc >/dev/null 2>&1; then \
+		mipsel-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-mips64:
+	@echo -n "MIPS64 (big-endian)... "
+	@if command -v mips64-linux-gnuabi64-gcc >/dev/null 2>&1; then \
+		mips64-linux-gnuabi64-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-mips64el:
+	@echo -n "MIPS64 (little-endian)... "
+	@if command -v mips64el-linux-gnuabi64-gcc >/dev/null 2>&1; then \
+		mips64el-linux-gnuabi64-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-powerpc:
+	@echo -n "PowerPC 32-bit... "
+	@if command -v powerpc-linux-gnu-gcc >/dev/null 2>&1; then \
+		powerpc-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-powerpc64:
+	@echo -n "PowerPC 64-bit BE... "
+	@if command -v powerpc64-linux-gnu-gcc >/dev/null 2>&1; then \
+		powerpc64-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-powerpc64le:
+	@echo -n "PowerPC 64-bit LE... "
+	@if command -v powerpc64le-linux-gnu-gcc >/dev/null 2>&1; then \
+		powerpc64le-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-s390x:
+	@echo -n "S/390x (IBM Mainframe)... "
+	@if command -v s390x-linux-gnu-gcc >/dev/null 2>&1; then \
+		s390x-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-sparc64:
+	@echo -n "SPARC64 (Sun/Oracle)... "
+	@if command -v sparc64-linux-gnu-gcc >/dev/null 2>&1; then \
+		sparc64-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-sh4:
+	@echo -n "SH4 (Linux)... "
+	@if command -v sh4-linux-gnu-gcc >/dev/null 2>&1; then \
+		sh4-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-loongarch64:
+	@echo -n "LoongArch64... "
+	@if command -v loongarch64-linux-gnu-gcc >/dev/null 2>&1; then \
+		loongarch64-linux-gnu-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	elif command -v loongarch64-linux-gnu-gcc-14 >/dev/null 2>&1; then \
+		loongarch64-linux-gnu-gcc-14 $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+# --- Embedded/Bare-Metal Cross-Compilers ---
+
+cross-or1k:
+	@echo -n "OpenRISC (or1k)... "
+	@if command -v or1k-elf-gcc >/dev/null 2>&1; then \
+		or1k-elf-gcc $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "NEEDS LIBC" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-h8300:
+	@echo -n "H8/300 (Hitachi)... "
+	@if command -v h8300-hms-gcc >/dev/null 2>&1; then \
+		h8300-hms-gcc $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "NEEDS LIBC" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-xtensa:
+	@echo -n "Xtensa LX106 (ESP8266)... "
+	@if command -v xtensa-lx106-elf-gcc >/dev/null 2>&1; then \
+		xtensa-lx106-elf-gcc $(CROSS_CFLAGS_FREESTANDING) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "NEEDS LIBC" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+# --- Windows Cross-Compilation ---
+
+cross-mingw32:
+	@echo -n "Windows 32-bit (MinGW)... "
+	@if command -v i686-w64-mingw32-gcc >/dev/null 2>&1; then \
+		i686-w64-mingw32-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
+	else echo "NOT INSTALLED"; fi
+
+cross-mingw64:
+	@echo -n "Windows 64-bit (MinGW)... "
+	@if command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then \
+		x86_64-w64-mingw32-gcc $(CROSS_CFLAGS) $(CORE_SRCS) 2>&1 | head -1 | grep -q "error\|fatal" && echo "FAIL" || echo "OK"; \
 	else echo "NOT INSTALLED"; fi
 
 #=============================================================================
@@ -525,31 +734,337 @@ cross-check-all:
 	@echo "=== FULL CROSS-COMPILATION MATRIX ========="
 	@echo "============================================"
 	@echo ""
-	@echo "--- 64-bit Architectures ---"
+	@echo "--- 64-bit Linux Architectures ---"
 	@$(MAKE) --no-print-directory cross-x86-64
 	@$(MAKE) --no-print-directory cross-aarch64
 	@$(MAKE) --no-print-directory cross-riscv64
+	@$(MAKE) --no-print-directory cross-alpha
+	@$(MAKE) --no-print-directory cross-mips64
+	@$(MAKE) --no-print-directory cross-mips64el
+	@$(MAKE) --no-print-directory cross-powerpc64
+	@$(MAKE) --no-print-directory cross-powerpc64le
+	@$(MAKE) --no-print-directory cross-s390x
+	@$(MAKE) --no-print-directory cross-sparc64
+	@$(MAKE) --no-print-directory cross-loongarch64
+	@$(MAKE) --no-print-directory cross-hppa64
 	@echo ""
-	@echo "--- 32-bit Architectures ---"
+	@echo "--- 32-bit Linux Architectures ---"
 	@$(MAKE) --no-print-directory cross-i386
 	@$(MAKE) --no-print-directory cross-arm
-	@$(MAKE) --no-print-directory cross-sh
+	@$(MAKE) --no-print-directory cross-arc
+	@$(MAKE) --no-print-directory cross-hppa
+	@$(MAKE) --no-print-directory cross-mips
+	@$(MAKE) --no-print-directory cross-mipsel
+	@$(MAKE) --no-print-directory cross-powerpc
+	@$(MAKE) --no-print-directory cross-sh4
 	@$(MAKE) --no-print-directory cross-m68k
 	@$(MAKE) --no-print-directory cross-m68k-mint
+	@echo ""
+	@echo "--- 32-bit Embedded/Bare-Metal ---"
+	@$(MAKE) --no-print-directory cross-sh
+	@$(MAKE) --no-print-directory cross-or1k
+	@$(MAKE) --no-print-directory cross-riscv32
+	@$(MAKE) --no-print-directory cross-riscv64-elf
 	@echo ""
 	@echo "--- 16-bit Architectures ---"
 	@$(MAKE) --no-print-directory cross-ia16
 	@$(MAKE) --no-print-directory cross-msp430
+	@$(MAKE) --no-print-directory cross-h8300
 	@echo ""
 	@echo "--- 8-bit Architectures ---"
 	@$(MAKE) --no-print-directory cross-avr
+	@$(MAKE) --no-print-directory cross-xtensa
 	@$(MAKE) --no-print-directory cross-z80
 	@$(MAKE) --no-print-directory cross-z88dk
 	@$(MAKE) --no-print-directory cross-6502
+	@$(MAKE) --no-print-directory cross-6502-llvm
+	@$(MAKE) --no-print-directory cross-c64
+	@$(MAKE) --no-print-directory cross-nes
+	@$(MAKE) --no-print-directory cross-atari2600
+	@echo ""
+	@echo "--- Windows Cross-Compilation ---"
+	@$(MAKE) --no-print-directory cross-mingw32
+	@$(MAKE) --no-print-directory cross-mingw64
 	@echo ""
 	@echo "============================================"
 	@echo "=== CROSS-COMPILATION COMPLETE ============"
 	@echo "============================================"
+
+#=============================================================================
+# Full Cross-Build Targets (produces real .o and .a files)
+#=============================================================================
+
+# Cross-build output directories
+CROSS_BUILD_DIR := $(BUILD_DIR)/cross
+
+# Architecture definitions for full builds
+# Format: ARCH_<name>_CC, ARCH_<name>_CFLAGS, ARCH_<name>_AR
+
+# --- 64-bit Linux ---
+ARCH_x86_64_CC := gcc
+ARCH_x86_64_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_x86_64_AR := ar
+
+ARCH_aarch64_CC := aarch64-linux-gnu-gcc
+ARCH_aarch64_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_aarch64_AR := aarch64-linux-gnu-ar
+
+ARCH_alpha_CC := alpha-linux-gnu-gcc
+ARCH_alpha_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_alpha_AR := alpha-linux-gnu-ar
+
+ARCH_mips64_CC := mips64-linux-gnuabi64-gcc
+ARCH_mips64_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_mips64_AR := mips64-linux-gnuabi64-ar
+
+ARCH_ppc64_CC := powerpc64-linux-gnu-gcc
+ARCH_ppc64_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_ppc64_AR := powerpc64-linux-gnu-ar
+
+ARCH_ppc64le_CC := powerpc64le-linux-gnu-gcc
+ARCH_ppc64le_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_ppc64le_AR := powerpc64le-linux-gnu-ar
+
+ARCH_s390x_CC := s390x-linux-gnu-gcc
+ARCH_s390x_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_s390x_AR := s390x-linux-gnu-ar
+
+ARCH_sparc64_CC := sparc64-linux-gnu-gcc
+ARCH_sparc64_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_sparc64_AR := sparc64-linux-gnu-ar
+
+# --- 32-bit Linux ---
+ARCH_arm_CC := arm-none-eabi-gcc
+ARCH_arm_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude -ffreestanding -mcpu=cortex-m4
+ARCH_arm_AR := arm-none-eabi-ar
+
+ARCH_m68k_CC := m68k-linux-gnu-gcc
+ARCH_m68k_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_m68k_AR := m68k-linux-gnu-ar
+
+ARCH_mips_CC := mips-linux-gnu-gcc
+ARCH_mips_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_mips_AR := mips-linux-gnu-ar
+
+ARCH_ppc_CC := powerpc-linux-gnu-gcc
+ARCH_ppc_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude
+ARCH_ppc_AR := powerpc-linux-gnu-ar
+
+# --- Embedded/Bare-metal ---
+ARCH_avr_CC := avr-gcc
+ARCH_avr_CFLAGS := -std=c11 -Wall -Wextra -Os -Iinclude -ffreestanding -mmcu=atmega328p -DPB_SIZE_MICRO -DPB_USE_FIXED_POINT=1
+ARCH_avr_AR := avr-ar
+
+ARCH_riscv32_CC := riscv64-unknown-elf-gcc
+ARCH_riscv32_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude -ffreestanding -march=rv32imc -mabi=ilp32 -isystem /usr/lib/picolibc/riscv64-unknown-elf/include
+ARCH_riscv32_AR := riscv64-unknown-elf-ar
+
+ARCH_riscv64_CC := riscv64-unknown-elf-gcc
+ARCH_riscv64_CFLAGS := -std=c17 -Wall -Wextra -O2 -Iinclude -ffreestanding -march=rv64gc -mabi=lp64d -isystem /usr/lib/picolibc/riscv64-unknown-elf/include
+ARCH_riscv64_AR := riscv64-unknown-elf-ar
+
+# --- 8-bit ---
+ARCH_6502_CC := /opt/llvm-mos/bin/mos-common-clang
+ARCH_6502_CFLAGS := -Os -Iinclude -DPB_USE_FIXED_POINT=1 -DPB_FIXED_FORMAT=2 -DPB_FREESTANDING=1 -DPB_SIZE_MICRO
+ARCH_6502_AR := /opt/llvm-mos/bin/llvm-ar
+
+# Generic cross-build function
+# Usage: $(call cross-build,arch)
+define cross-build
+	@echo "=== Building for $(1) ==="
+	@mkdir -p $(CROSS_BUILD_DIR)/$(1)/obj/core $(CROSS_BUILD_DIR)/$(1)/obj/data $(CROSS_BUILD_DIR)/$(1)/lib
+	@for src in $(CORE_SRCS); do \
+		obj=$(CROSS_BUILD_DIR)/$(1)/obj/$$(echo $$src | sed 's|$(SRC_DIR)/||;s|\.c$$|.o|'); \
+		echo "  CC $$src -> $$obj"; \
+		$(ARCH_$(1)_CC) $(ARCH_$(1)_CFLAGS) -c $$src -o $$obj || exit 1; \
+	done
+	@echo "  AR $(CROSS_BUILD_DIR)/$(1)/lib/libpb_core.a"
+	@$(ARCH_$(1)_AR) rcs $(CROSS_BUILD_DIR)/$(1)/lib/libpb_core.a $(CROSS_BUILD_DIR)/$(1)/obj/core/*.o
+	@echo "=== $(1) build complete ==="
+endef
+
+# Full build targets for each architecture
+.PHONY: build-x86_64 build-aarch64 build-arm build-avr build-riscv32 build-riscv64 build-6502
+.PHONY: build-alpha build-mips64 build-ppc64 build-ppc64le build-s390x build-sparc64
+.PHONY: build-m68k build-mips build-ppc
+
+# Helper to check if compiler exists
+define check-compiler
+$(shell command -v $(1) 2>/dev/null)
+endef
+
+build-x86_64:
+	$(call cross-build,x86_64)
+
+build-aarch64:
+ifneq ($(call check-compiler,$(ARCH_aarch64_CC)),)
+	$(call cross-build,aarch64)
+else
+	@echo "$(ARCH_aarch64_CC) not installed"
+endif
+
+build-alpha:
+ifneq ($(call check-compiler,$(ARCH_alpha_CC)),)
+	$(call cross-build,alpha)
+else
+	@echo "$(ARCH_alpha_CC) not installed"
+endif
+
+build-mips64:
+ifneq ($(call check-compiler,$(ARCH_mips64_CC)),)
+	$(call cross-build,mips64)
+else
+	@echo "$(ARCH_mips64_CC) not installed"
+endif
+
+build-ppc64:
+ifneq ($(call check-compiler,$(ARCH_ppc64_CC)),)
+	$(call cross-build,ppc64)
+else
+	@echo "$(ARCH_ppc64_CC) not installed"
+endif
+
+build-ppc64le:
+ifneq ($(call check-compiler,$(ARCH_ppc64le_CC)),)
+	$(call cross-build,ppc64le)
+else
+	@echo "$(ARCH_ppc64le_CC) not installed"
+endif
+
+build-s390x:
+ifneq ($(call check-compiler,$(ARCH_s390x_CC)),)
+	$(call cross-build,s390x)
+else
+	@echo "$(ARCH_s390x_CC) not installed"
+endif
+
+build-sparc64:
+ifneq ($(call check-compiler,$(ARCH_sparc64_CC)),)
+	$(call cross-build,sparc64)
+else
+	@echo "$(ARCH_sparc64_CC) not installed"
+endif
+
+build-arm:
+ifneq ($(call check-compiler,$(ARCH_arm_CC)),)
+	$(call cross-build,arm)
+else
+	@echo "$(ARCH_arm_CC) not installed"
+endif
+
+build-m68k:
+ifneq ($(call check-compiler,$(ARCH_m68k_CC)),)
+	$(call cross-build,m68k)
+else
+	@echo "$(ARCH_m68k_CC) not installed"
+endif
+
+build-mips:
+ifneq ($(call check-compiler,$(ARCH_mips_CC)),)
+	$(call cross-build,mips)
+else
+	@echo "$(ARCH_mips_CC) not installed"
+endif
+
+build-ppc:
+ifneq ($(call check-compiler,$(ARCH_ppc_CC)),)
+	$(call cross-build,ppc)
+else
+	@echo "$(ARCH_ppc_CC) not installed"
+endif
+
+build-avr:
+ifneq ($(call check-compiler,$(ARCH_avr_CC)),)
+	$(call cross-build,avr)
+else
+	@echo "$(ARCH_avr_CC) not installed"
+endif
+
+build-riscv32:
+ifneq ($(call check-compiler,$(ARCH_riscv32_CC)),)
+	$(call cross-build,riscv32)
+else
+	@echo "$(ARCH_riscv32_CC) not installed"
+endif
+
+build-riscv64:
+ifneq ($(call check-compiler,$(ARCH_riscv64_CC)),)
+	$(call cross-build,riscv64)
+else
+	@echo "$(ARCH_riscv64_CC) not installed"
+endif
+
+# 6502 needs special handling - no float support, use NOFLOAT sources
+build-6502:
+ifeq ($(wildcard $(ARCH_6502_CC)),$(ARCH_6502_CC))
+	@echo "=== Building for 6502 (no-float) ==="
+	@mkdir -p $(CROSS_BUILD_DIR)/6502/obj/core $(CROSS_BUILD_DIR)/6502/lib
+	@for src in $(CORE_SRCS_NOFLOAT); do \
+		obj=$(CROSS_BUILD_DIR)/6502/obj/$$(echo $$src | sed 's|$(SRC_DIR)/||;s|\.c$$|.o|'); \
+		echo "  CC $$src -> $$obj"; \
+		$(ARCH_6502_CC) $(ARCH_6502_CFLAGS) -c $$src -o $$obj || exit 1; \
+	done
+	@echo "  AR $(CROSS_BUILD_DIR)/6502/lib/libpb_core.a"
+	@$(ARCH_6502_AR) rcs $(CROSS_BUILD_DIR)/6502/lib/libpb_core.a $(CROSS_BUILD_DIR)/6502/obj/core/*.o
+	@echo "=== 6502 build complete (pb_color/pb_cvd excluded - no float) ==="
+else
+	@echo "LLVM-MOS not installed at /opt/llvm-mos"
+endif
+
+# Build all available architectures
+build-all-cross:
+	@echo "============================================"
+	@echo "=== FULL CROSS-BUILD MATRIX ==============="
+	@echo "============================================"
+	@echo ""
+	@echo "--- 64-bit Architectures ---"
+	@$(MAKE) --no-print-directory build-x86_64
+	@$(MAKE) --no-print-directory build-aarch64
+	@$(MAKE) --no-print-directory build-alpha
+	@$(MAKE) --no-print-directory build-mips64
+	@$(MAKE) --no-print-directory build-ppc64
+	@$(MAKE) --no-print-directory build-ppc64le
+	@$(MAKE) --no-print-directory build-s390x
+	@$(MAKE) --no-print-directory build-sparc64
+	@echo ""
+	@echo "--- 32-bit Architectures ---"
+	@$(MAKE) --no-print-directory build-arm
+	@$(MAKE) --no-print-directory build-m68k
+	@$(MAKE) --no-print-directory build-mips
+	@$(MAKE) --no-print-directory build-ppc
+	@echo ""
+	@echo "--- Embedded/8-bit ---"
+	@$(MAKE) --no-print-directory build-avr
+	@$(MAKE) --no-print-directory build-riscv32
+	@$(MAKE) --no-print-directory build-riscv64
+	@$(MAKE) --no-print-directory build-6502
+	@echo ""
+	@echo "============================================"
+	@echo "=== Cross-build Summary ==="
+	@echo "============================================"
+	@for lib in $(CROSS_BUILD_DIR)/*/lib/*.a; do \
+		if [ -f "$$lib" ]; then \
+			arch=$$(echo "$$lib" | sed 's|.*/cross/||;s|/lib/.*||'); \
+			size=$$(ls -lh "$$lib" | awk '{print $$5}'); \
+			echo "  $$arch: $$size"; \
+		fi; \
+	done
+
+# Build matrix: all combinations of arch × size-tier × fixed-point
+.PHONY: build-matrix
+
+build-matrix:
+	@echo "============================================"
+	@echo "=== FULL BUILD MATRIX ====================="
+	@echo "============================================"
+	@for arch in x86_64 aarch64 arm avr riscv32 riscv64 6502; do \
+		for tier in full medium mini micro; do \
+			for fp in 0 1; do \
+				echo "Building $$arch / $$tier / FIXED_POINT=$$fp"; \
+			done; \
+		done; \
+	done
+	@echo "(Matrix enumeration only - full build would take significant time)"
 
 #=============================================================================
 # C Standard Compatibility Checks
@@ -624,3 +1139,155 @@ info:
 	@which ia16-elf-gcc 2>/dev/null && echo "  ia16-elf-gcc: installed" || echo "  ia16-elf-gcc: not installed"
 	@which sdcc 2>/dev/null && echo "  sdcc: installed" || echo "  sdcc: not installed"
 	@which cc65 2>/dev/null && echo "  cc65: installed" || echo "  cc65: not installed"
+
+#=============================================================================
+# Docker Build Environment
+#=============================================================================
+# Provides containerized build environment with all cross-compilers pre-installed
+# Usage:
+#   make docker-build       - Build the Docker image
+#   make docker-shell       - Interactive shell
+#   make docker-make TARGET=test  - Run specific make target
+#   make DOCKER=1 test      - Run test inside Docker
+
+.PHONY: docker-build docker-build-full docker-build-minimal docker-shell
+.PHONY: docker-make docker-cross-all docker-build-all docker-pdp11 docker-clean
+.PHONY: docker-info docker-pull-pdp11
+
+# Check if Docker is available
+DOCKER_AVAILABLE := $(shell command -v docker 2>/dev/null)
+
+# Build Docker images
+docker-build:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Building pb-core-build Docker image ==="
+	docker build -t $(DOCKER_IMAGE) .
+
+docker-build-full:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Building pb-core-build:full Docker image (with LLVM-MOS) ==="
+	docker build --build-arg INSTALL_LLVM_MOS=1 -t $(DOCKER_IMAGE_FULL) .
+
+docker-build-minimal:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Building pb-core-build:minimal Docker image ==="
+	docker build --build-arg INSTALL_LLVM_MOS=0 -t $(DOCKER_IMAGE_MINIMAL) .
+
+# Pull PDP-11 Docker image
+docker-pull-pdp11:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Pulling PDP-11 cross-compiler image ==="
+	docker pull $(DOCKER_PDP11_IMAGE)
+
+# Interactive shell in Docker environment
+docker-shell:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Starting interactive Docker shell ==="
+	@echo "    All cross-compilers are available."
+	@echo "    Type 'exit' to leave."
+	$(DOCKER_RUN) -it $(DOCKER_IMAGE) /bin/bash
+
+# Run make target inside Docker
+# Usage: make docker-make TARGET=test
+#        make docker-make TARGET="cross-check-all"
+#        make docker-make TARGET="FIXED_POINT=1 test"
+TARGET ?= lib
+docker-make:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Running 'make $(TARGET)' in Docker ==="
+	$(DOCKER_RUN) $(DOCKER_IMAGE) make $(TARGET)
+
+# Convenience targets for common Docker operations
+docker-test:
+	$(MAKE) docker-make TARGET=test
+
+docker-cross-all:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Running cross-check-all in Docker ==="
+	$(DOCKER_RUN) $(DOCKER_IMAGE_FULL) make cross-check-all
+
+docker-build-all:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Running build-all-cross in Docker ==="
+	$(DOCKER_RUN) $(DOCKER_IMAGE_FULL) make build-all-cross
+
+# PDP-11 cross-compilation via Docker
+# Creates build/cross/pdp11/lib/libpb_core.a
+docker-pdp11:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Building for PDP-11 via Docker ==="
+	@mkdir -p $(CROSS_BUILD_DIR)/pdp11/obj/core $(CROSS_BUILD_DIR)/pdp11/lib
+	@for src in $(CORE_SRCS); do \
+		obj=$(CROSS_BUILD_DIR)/pdp11/obj/$$(echo $$src | sed 's|$(SRC_DIR)/||;s|\.c$$|.o|'); \
+		echo "  CC $$src -> $$obj"; \
+		$(DOCKER_RUN) $(DOCKER_PDP11_IMAGE) pdp11-aout-gcc -std=c99 -Wall -Wextra -Os -Iinclude -ffreestanding -c $$src -o $$obj || exit 1; \
+	done
+	@echo "  AR $(CROSS_BUILD_DIR)/pdp11/lib/libpb_core.a"
+	$(DOCKER_RUN) $(DOCKER_PDP11_IMAGE) pdp11-aout-ar rcs $(CROSS_BUILD_DIR)/pdp11/lib/libpb_core.a $(CROSS_BUILD_DIR)/pdp11/obj/core/*.o
+	@echo "=== PDP-11 build complete ==="
+
+# Show Docker environment info
+docker-info:
+ifndef DOCKER_AVAILABLE
+	@echo "Docker: NOT INSTALLED"
+else
+	@echo "=== Docker Environment ==="
+	@docker --version
+	@echo ""
+	@echo "=== Available pb-core images ==="
+	@docker images | grep -E "^(pb-core|jameshagerman/gcc-pdp11)" || echo "  No pb-core images found. Run 'make docker-build' first."
+	@echo ""
+	@echo "=== Disk usage ==="
+	@docker system df 2>/dev/null || true
+endif
+
+# Clean Docker images
+docker-clean:
+ifndef DOCKER_AVAILABLE
+	$(error Docker is not installed. Please install Docker first.)
+endif
+	@echo "=== Removing pb-core Docker images ==="
+	-docker rmi $(DOCKER_IMAGE) 2>/dev/null
+	-docker rmi $(DOCKER_IMAGE_FULL) 2>/dev/null
+	-docker rmi $(DOCKER_IMAGE_MINIMAL) 2>/dev/null
+	@echo "Note: PDP-11 image not removed (use 'docker rmi $(DOCKER_PDP11_IMAGE)' manually)"
+
+#=============================================================================
+# Docker-Compose Shortcuts
+#=============================================================================
+# For users who prefer docker-compose
+
+.PHONY: compose-build compose-shell compose-test compose-cross
+
+compose-build:
+	docker-compose build
+
+compose-shell:
+	docker-compose run --rm shell
+
+compose-test:
+	docker-compose run --rm build make test
+
+compose-cross:
+	docker-compose run --rm build make cross-check-all
+
+compose-pdp11:
+	docker-compose run --rm pdp11 pdp11-aout-gcc --version

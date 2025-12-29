@@ -1,0 +1,24 @@
+Splint 3.1.2 --- 21 Feb 2021
+
+Command Line: Setting mode weak after setting mode flags will override set
+                 values of flags: boolint, charint
+  Command line sets flag in abnormal way (Use -warnflags to inhibit warning)
+pb_core/include/pb/pb_hex.h:109:55: Function parameter neighbors declared as
+    manifest array (size constant is meaningless)
+  A formal parameter is declared as an array with size.  The size of the array
+  is ignored in this context, since the array formal parameter is treated as a
+  pointer. (Use -fixedformalarray to inhibit warning)
+pb_core/include/pb/pb_hex.h:122:51: Function parameter neighbors declared as
+    manifest array (size constant is meaningless)
+pb_core/include/pb/pb_hex.h:135:48: Function parameter neighbors declared as
+    manifest array (size constant is meaningless)
+pb_core/include/pb/pb_board.h:192:55:
+    Function parameter counts declared as manifest array (size constant is
+    meaningless)
+pb_core/include/pb/pb_rng.h:32:51: Function parameter state declared as
+    manifest array (size constant is meaningless)
+pb_core/include/pb/pb_rng.h:37:51: Function parameter state declared as
+    manifest array (size constant is meaningless)
+pb_core/src/core/pb_board.c:144:17: Parse Error. (For help on parse errors, see
+                                      splint -help parseerrors.)
+*** Cannot continue.

@@ -1,0 +1,31 @@
+# pb_core Docker ignore file
+# Exclude files not needed in the Docker build context
+
+# Build artifacts
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation (not needed for builds)
+docs/*.md
+*.md
+
+# Test data (large files)
+tests/data/
+
+# External tools
+colorblindness/
+
+# Docker files (prevent recursive context)
+Dockerfile
+docker-compose.yml
+.dockerignore

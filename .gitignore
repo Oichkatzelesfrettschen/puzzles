@@ -3,3 +3,12 @@ logs/
 mydatabase.db
 .claude/
 pb_core/sh-elf-*-casio/
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Build artifacts
+pb_core/build/

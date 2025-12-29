@@ -1,0 +1,58 @@
+# pb_core Docker Compose Configuration
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Usage:
+#   docker-compose build                    # Build the image
+#   docker-compose run build make           # Run make
+#   docker-compose run build make test      # Run tests
+#   docker-compose run build make cross-check-all  # Test all cross-compilers
+#   docker-compose run pdp11 pdp11-aout-gcc -c file.c  # PDP-11 compile
+
+services:
+  # Main build environment with all cross-compilers
+  build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_LLVM_MOS: "1"
+    image: pb-core-build:latest
+    volumes:
+      - .:/work
+    working_dir: /work
+    environment:
+      - TERM=xterm-256color
+
+  # Minimal build (faster, fewer compilers)
+  build-minimal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_LLVM_MOS: "0"
+    image: pb-core-build:minimal
+    volumes:
+      - .:/work
+    working_dir: /work
+
+  # PDP-11 cross-compiler (separate image)
+  pdp11:
+    image: jameshagerman/gcc-pdp11-aout:latest
+    volumes:
+      - .:/work
+    working_dir: /work
+
+  # Interactive development shell
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_LLVM_MOS: "1"
+    image: pb-core-build:latest
+    volumes:
+      - .:/work
+    working_dir: /work
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/bash

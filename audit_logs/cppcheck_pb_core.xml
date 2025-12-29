@@ -1,0 +1,730 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results version="2">
+    <cppcheck version="2.13.0"/>
+    <errors>
+Checking pb_core/src/core/pb_board.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_board.h&quot; not found." verbose="Include file: &quot;pb/pb_board.h&quot; not found.">
+            <location file="pb_core/src/core/pb_board.c" line="10" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_rng.h&quot; not found." verbose="Include file: &quot;pb/pb_rng.h&quot; not found.">
+            <location file="pb_core/src/core/pb_board.c" line="11" column="0"/>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;ctx&apos; can be declared as pointer to const" verbose="Variable &apos;ctx&apos; can be declared as pointer to const" cwe="398" file0="pb_core/src/core/pb_board.c">
+            <location file="pb_core/src/core/pb_board.c" line="180" column="22" info="Variable &apos;ctx&apos; can be declared as pointer to const"/>
+            <symbol>ctx</symbol>
+        </error>
+1/19 files checked 3% done
+Checking pb_core/src/core/pb_checksum.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_checksum.h&quot; not found." verbose="Include file: &quot;pb/pb_checksum.h&quot; not found.">
+            <location file="pb_core/src/core/pb_checksum.c" line="8" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_board.h&quot; not found." verbose="Include file: &quot;pb/pb_board.h&quot; not found.">
+            <location file="pb_core/src/core/pb_checksum.c" line="9" column="0"/>
+        </error>
+        <error id="constVariable" severity="style" msg="Variable &apos;bytes&apos; can be declared as const array" verbose="Variable &apos;bytes&apos; can be declared as const array" cwe="398" file0="pb_core/src/core/pb_checksum.c">
+            <location file="pb_core/src/core/pb_checksum.c" line="78" column="13" info="Variable &apos;bytes&apos; can be declared as const array"/>
+            <symbol>bytes</symbol>
+        </error>
+Checking pb_core/src/core/pb_checksum.c: PB_USE_FIXED_POINT...
+2/19 files checked 6% done
+Checking pb_core/src/core/pb_color.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_color.h&quot; not found." verbose="Include file: &quot;pb/pb_color.h&quot; not found.">
+            <location file="pb_core/src/core/pb_color.c" line="9" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_color.c" line="10" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;ctype.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;ctype.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/core/pb_color.c" line="12" column="0"/>
+        </error>
+3/19 files checked 9% done
+Checking pb_core/src/core/pb_cvd.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_cvd.h&quot; not found." verbose="Include file: &quot;pb/pb_cvd.h&quot; not found.">
+            <location file="pb_core/src/core/pb_cvd.c" line="15" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_cvd.c" line="16" column="0"/>
+        </error>
+4/19 files checked 13% done
+Checking pb_core/src/core/pb_effect.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_effect.h&quot; not found." verbose="Include file: &quot;pb/pb_effect.h&quot; not found.">
+            <location file="pb_core/src/core/pb_effect.c" line="10" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_hex.h&quot; not found." verbose="Include file: &quot;pb/pb_hex.h&quot; not found.">
+            <location file="pb_core/src/core/pb_effect.c" line="11" column="0"/>
+        </error>
+5/19 files checked 17% done
+Checking pb_core/src/core/pb_game.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_game.h&quot; not found." verbose="Include file: &quot;pb/pb_game.h&quot; not found.">
+            <location file="pb_core/src/core/pb_game.c" line="10" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_rng.h&quot; not found." verbose="Include file: &quot;pb/pb_rng.h&quot; not found.">
+            <location file="pb_core/src/core/pb_game.c" line="11" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_hex.h&quot; not found." verbose="Include file: &quot;pb/pb_hex.h&quot; not found.">
+            <location file="pb_core/src/core/pb_game.c" line="12" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_game.c" line="14" column="0"/>
+        </error>
+6/19 files checked 22% done
+Checking pb_core/src/core/pb_hex.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_hex.h&quot; not found." verbose="Include file: &quot;pb/pb_hex.h&quot; not found.">
+            <location file="pb_core/src/core/pb_hex.c" line="10" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_hex.c" line="11" column="0"/>
+        </error>
+7/19 files checked 25% done
+Checking pb_core/src/core/pb_path.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_path.h&quot; not found." verbose="Include file: &quot;pb/pb_path.h&quot; not found.">
+            <location file="pb_core/src/core/pb_path.c" line="10" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/core/pb_path.c" line="11" column="0"/>
+        </error>
+Checking pb_core/src/core/pb_path.c: PB_USE_FIXED_POINT...
+8/19 files checked 30% done
+Checking pb_core/src/core/pb_pattern.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_pattern.h&quot; not found." verbose="Include file: &quot;pb/pb_pattern.h&quot; not found.">
+            <location file="pb_core/src/core/pb_pattern.c" line="9" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/core/pb_pattern.c" line="10" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_pattern.c" line="12" column="0"/>
+        </error>
+9/19 files checked 34% done
+Checking pb_core/src/core/pb_replay.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_replay.h&quot; not found." verbose="Include file: &quot;pb/pb_replay.h&quot; not found.">
+            <location file="pb_core/src/core/pb_replay.c" line="8" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/core/pb_replay.c" line="9" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/core/pb_replay.c" line="11" column="0"/>
+        </error>
+Checking pb_core/src/core/pb_replay.c: PB_USE_FIXED_POINT...
+10/19 files checked 41% done
+Checking pb_core/src/core/pb_rng.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_rng.h&quot; not found." verbose="Include file: &quot;pb/pb_rng.h&quot; not found.">
+            <location file="pb_core/src/core/pb_rng.c" line="10" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_config.h&quot; not found." verbose="Include file: &quot;pb/pb_config.h&quot; not found.">
+            <location file="pb_core/src/core/pb_rng.c" line="11" column="0"/>
+        </error>
+11/19 files checked 43% done
+Checking pb_core/src/core/pb_session.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_session.h&quot; not found." verbose="Include file: &quot;pb/pb_session.h&quot; not found.">
+            <location file="pb_core/src/core/pb_session.c" line="8" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_board.h&quot; not found." verbose="Include file: &quot;pb/pb_board.h&quot; not found.">
+            <location file="pb_core/src/core/pb_session.c" line="9" column="0"/>
+        </error>
+12/19 files checked 47% done
+Checking pb_core/src/core/pb_shot.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_shot.h&quot; not found." verbose="Include file: &quot;pb/pb_shot.h&quot; not found.">
+            <location file="pb_core/src/core/pb_shot.c" line="11" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_board.h&quot; not found." verbose="Include file: &quot;pb/pb_board.h&quot; not found.">
+            <location file="pb_core/src/core/pb_shot.c" line="12" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_shot.c" line="13" column="0"/>
+        </error>
+Checking pb_core/src/core/pb_shot.c: PB_USE_FIXED_POINT...
+13/19 files checked 53% done
+Checking pb_core/src/core/pb_solver.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_solver.h&quot; not found." verbose="Include file: &quot;pb/pb_solver.h&quot; not found.">
+            <location file="pb_core/src/core/pb_solver.c" line="7" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_shot.h&quot; not found." verbose="Include file: &quot;pb/pb_shot.h&quot; not found.">
+            <location file="pb_core/src/core/pb_solver.c" line="8" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_rng.h&quot; not found." verbose="Include file: &quot;pb/pb_rng.h&quot; not found.">
+            <location file="pb_core/src/core/pb_solver.c" line="9" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/core/pb_solver.c" line="11" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_solver.c" line="12" column="0"/>
+        </error>
+14/19 files checked 58% done
+Checking pb_core/src/core/pb_trajectory.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_trajectory.h&quot; not found." verbose="Include file: &quot;pb/pb_trajectory.h&quot; not found.">
+            <location file="pb_core/src/core/pb_trajectory.c" line="12" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_shot.h&quot; not found." verbose="Include file: &quot;pb/pb_shot.h&quot; not found.">
+            <location file="pb_core/src/core/pb_trajectory.c" line="13" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_hex.h&quot; not found." verbose="Include file: &quot;pb/pb_hex.h&quot; not found.">
+            <location file="pb_core/src/core/pb_trajectory.c" line="14" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_freestanding.h&quot; not found." verbose="Include file: &quot;pb/pb_freestanding.h&quot; not found.">
+            <location file="pb_core/src/core/pb_trajectory.c" line="15" column="0"/>
+        </error>
+15/19 files checked 62% done
+Checking pb_core/src/data/pb_data.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_data.h&quot; not found." verbose="Include file: &quot;pb/pb_data.h&quot; not found.">
+            <location file="pb_core/src/data/pb_data.c" line="6" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_board.h&quot; not found." verbose="Include file: &quot;pb/pb_board.h&quot; not found.">
+            <location file="pb_core/src/data/pb_data.c" line="7" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_color.h&quot; not found." verbose="Include file: &quot;pb/pb_color.h&quot; not found.">
+            <location file="pb_core/src/data/pb_data.c" line="8" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;cJSON.h&quot; not found." verbose="Include file: &quot;cJSON.h&quot; not found.">
+            <location file="pb_core/src/data/pb_data.c" line="9" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/data/pb_data.c" line="10" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/data/pb_data.c" line="11" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/data/pb_data.c" line="12" column="0"/>
+        </error>
+        <error id="knownConditionTrueFalse" severity="style" msg="Condition &apos;i&gt;=8&apos; is always false" verbose="Condition &apos;i&gt;=8&apos; is always false" cwe="570" file0="pb_core/src/data/pb_data.c">
+            <location file="pb_core/src/data/pb_data.c" line="325" column="23" info="Condition &apos;i&gt;=8&apos; is always false"/>
+            <location file="pb_core/src/data/pb_data.c" line="323" column="21" info="Assignment &apos;i=0&apos;, assigned value is 0"/>
+        </error>
+16/19 files checked 70% done
+Checking pb_core/src/platform/pb_demo.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_core.h&quot; not found." verbose="Include file: &quot;pb/pb_core.h&quot; not found.">
+            <location file="pb_core/src/platform/pb_demo.c" line="15" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_platform.h&quot; not found." verbose="Include file: &quot;pb/pb_platform.h&quot; not found.">
+            <location file="pb_core/src/platform/pb_demo.c" line="16" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_demo.c" line="17" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;math.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;math.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_demo.c" line="18" column="0"/>
+        </error>
+17/19 files checked 73% done
+Checking pb_core/src/platform/pb_sdl2.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingInclude" severity="information" msg="Include file: &quot;pb/pb_platform.h&quot; not found." verbose="Include file: &quot;pb/pb_platform.h&quot; not found.">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="10" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;SDL2/SDL.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;SDL2/SDL.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="11" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;SDL2/SDL_mixer.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;SDL2/SDL_mixer.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="12" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;SDL2/SDL_image.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;SDL2/SDL_image.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="13" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="14" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="15" column="0"/>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;impl&apos; can be declared as pointer to const" verbose="Variable &apos;impl&apos; can be declared as pointer to const" cwe="398" file0="pb_core/src/platform/pb_sdl2.c">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="140" column="16" info="Variable &apos;impl&apos; can be declared as pointer to const"/>
+            <symbol>impl</symbol>
+        </error>
+        <error id="constParameterCallback" severity="style" msg="Parameter &apos;p&apos; can be declared as pointer to const. However it seems that &apos;sdl2_should_quit&apos; is a callback function, if &apos;p&apos; is declared with const you might also need to cast function pointer(s)." verbose="Parameter &apos;p&apos; can be declared as pointer to const. However it seems that &apos;sdl2_should_quit&apos; is a callback function, if &apos;p&apos; is declared with const you might also need to cast function pointer(s)." cwe="398" file0="pb_core/src/platform/pb_sdl2.c">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="138" column="43" info="Parameter &apos;p&apos; can be declared as pointer to const"/>
+            <location file="pb_core/src/platform/pb_sdl2.c" line="540" column="22" info="You might need to cast the function pointer here"/>
+            <symbol>p</symbol>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;impl&apos; can be declared as pointer to const" verbose="Variable &apos;impl&apos; can be declared as pointer to const" cwe="398" file0="pb_core/src/platform/pb_sdl2.c">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="156" column="16" info="Variable &apos;impl&apos; can be declared as pointer to const"/>
+            <symbol>impl</symbol>
+        </error>
+        <error id="constParameterCallback" severity="style" msg="Parameter &apos;p&apos; can be declared as pointer to const. However it seems that &apos;sdl2_end_frame&apos; is a callback function, if &apos;p&apos; is declared with const you might also need to cast function pointer(s)." verbose="Parameter &apos;p&apos; can be declared as pointer to const. However it seems that &apos;sdl2_end_frame&apos; is a callback function, if &apos;p&apos; is declared with const you might also need to cast function pointer(s)." cwe="398" file0="pb_core/src/platform/pb_sdl2.c">
+            <location file="pb_core/src/platform/pb_sdl2.c" line="154" column="41" info="Parameter &apos;p&apos; can be declared as pointer to const"/>
+            <location file="pb_core/src/platform/pb_sdl2.c" line="542" column="20" info="You might need to cast the function pointer here"/>
+            <symbol>p</symbol>
+        </error>
+18/19 files checked 78% done
+Checking pb_core/src/vendor/cJSON.c ...
+Defines:
+Undefines:
+Includes:
+Platform:native
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;string.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="40" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdio.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="41" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;math.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;math.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="42" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;stdlib.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="43" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;limits.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;limits.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="44" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;ctype.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;ctype.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="45" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;float.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;float.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="46" column="0"/>
+        </error>
+        <error id="missingInclude" severity="information" msg="Include file: &quot;cJSON.h&quot; not found." verbose="Include file: &quot;cJSON.h&quot; not found.">
+            <location file="pb_core/src/vendor/cJSON.c" line="59" column="0"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;locale.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results." verbose="Include file: &lt;locale.h&gt; not found. Please note: Cppcheck does not need standard library headers to get proper results.">
+            <location file="pb_core/src/vendor/cJSON.c" line="49" column="0"/>
+        </error>
+        <error id="preprocessorErrorDirective" severity="error" msg="#error cJSON.h and cJSON.c have different versions. Make sure that both have the same." verbose="#error cJSON.h and cJSON.c have different versions. Make sure that both have the same." file0="pb_core/src/vendor/cJSON.c">
+            <location file="pb_core/src/vendor/cJSON.c" line="121" column="6"/>
+        </error>
+        <error id="noValidConfiguration" severity="information" msg="This file is not analyzed. Cppcheck failed to extract a valid configuration. Use -v for more details." verbose="This file is not analyzed. Cppcheck failed to extract a valid configuration. The tested configurations have these preprocessor errors:\012&apos;&apos; : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012ENABLE_LOCALES : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012_CRT_SECURE_NO_DEPRECATE;_MSC_VER : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012_MSC_VER : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012_WIN32 : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012__GNUC__ : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012__GNUC__;__clang__ : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012false : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.\012true : [pb_core/src/vendor/cJSON.c:121] #error cJSON.h and cJSON.c have different versions. Make sure that both have the same." file0="pb_core/src/vendor/cJSON.c">
+            <location file="pb_core/src/vendor/cJSON.c" line="0" column="0"/>
+        </error>
+19/19 files checked 100% done
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_has_match&apos; is never used." verbose="The function &apos;pb_has_match&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_board.c" line="222" column="0"/>
+            <symbol>pb_has_match</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_board_count_colors&apos; is never used." verbose="The function &apos;pb_board_count_colors&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_board.c" line="359" column="0"/>
+            <symbol>pb_board_count_colors</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_crc32&apos; is never used." verbose="The function &apos;pb_crc32&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_checksum.c" line="54" column="0"/>
+            <symbol>pb_crc32</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_crc32_finalize&apos; is never used." verbose="The function &apos;pb_crc32_finalize&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_checksum.c" line="59" column="0"/>
+            <symbol>pb_crc32_finalize</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_state_compare&apos; is never used." verbose="The function &apos;pb_state_compare&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_checksum.c" line="201" column="0"/>
+            <symbol>pb_state_compare</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_checksum_buffer_verify&apos; is never used." verbose="The function &apos;pb_checksum_buffer_verify&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_checksum.c" line="327" column="0"/>
+            <symbol>pb_checksum_buffer_verify</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rgb8_to_rgba32&apos; is never used." verbose="The function &apos;pb_rgb8_to_rgba32&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="144" column="0"/>
+            <symbol>pb_rgb8_to_rgba32</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rgba32_to_rgb8&apos; is never used." verbose="The function &apos;pb_rgba32_to_rgb8&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="151" column="0"/>
+            <symbol>pb_rgba32_to_rgb8</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_to_oklch&apos; is never used." verbose="The function &apos;pb_hex_to_oklch&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="293" column="0"/>
+            <symbol>pb_hex_to_oklch</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_oklch_to_hex&apos; is never used." verbose="The function &apos;pb_oklch_to_hex&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="300" column="0"/>
+            <symbol>pb_oklch_to_hex</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_wcag_aa_normal&apos; is never used." verbose="The function &apos;pb_wcag_aa_normal&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="335" column="0"/>
+            <symbol>pb_wcag_aa_normal</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_wcag_aa_large&apos; is never used." verbose="The function &apos;pb_wcag_aa_large&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="339" column="0"/>
+            <symbol>pb_wcag_aa_large</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_wcag_aaa_normal&apos; is never used." verbose="The function &apos;pb_wcag_aaa_normal&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="343" column="0"/>
+            <symbol>pb_wcag_aaa_normal</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_delta_e&apos; is never used." verbose="The function &apos;pb_hex_delta_e&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_color.c" line="364" column="0"/>
+            <symbol>pb_hex_delta_e</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_cvd_type_name&apos; is never used." verbose="The function &apos;pb_cvd_type_name&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_cvd.c" line="135" column="0"/>
+            <symbol>pb_cvd_type_name</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_cvd_simulate_hex&apos; is never used." verbose="The function &apos;pb_cvd_simulate_hex&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_cvd.c" line="242" column="0"/>
+            <symbol>pb_cvd_simulate_hex</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_cvd_generate_safe_palette&apos; is never used." verbose="The function &apos;pb_cvd_generate_safe_palette&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_cvd.c" line="390" column="0"/>
+            <symbol>pb_cvd_generate_safe_palette</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_register_effect&apos; is never used." verbose="The function &apos;pb_register_effect&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_effect.c" line="146" column="0"/>
+            <symbol>pb_register_effect</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_effect_queue_init&apos; is never used." verbose="The function &apos;pb_effect_queue_init&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_effect.c" line="381" column="0"/>
+            <symbol>pb_effect_queue_init</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_effect_queue_add&apos; is never used." verbose="The function &apos;pb_effect_queue_add&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_effect.c" line="386" column="0"/>
+            <symbol>pb_effect_queue_add</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_effect_queue_process&apos; is never used." verbose="The function &apos;pb_effect_queue_process&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_effect.c" line="401" column="0"/>
+            <symbol>pb_effect_queue_process</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_effect_queue_tick&apos; is never used." verbose="The function &apos;pb_effect_queue_tick&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_effect.c" line="427" column="0"/>
+            <symbol>pb_effect_queue_tick</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_effect_queue_has_pending&apos; is never used." verbose="The function &apos;pb_effect_queue_has_pending&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_effect.c" line="432" column="0"/>
+            <symbol>pb_effect_queue_has_pending</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_load_board&apos; is never used." verbose="The function &apos;pb_game_load_board&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="258" column="0"/>
+            <symbol>pb_game_load_board</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_is_won&apos; is never used." verbose="The function &apos;pb_game_is_won&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="545" column="0"/>
+            <symbol>pb_game_is_won</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_is_lost&apos; is never used." verbose="The function &apos;pb_game_is_lost&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="550" column="0"/>
+            <symbol>pb_game_is_lost</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_checksum&apos; is never used." verbose="The function &apos;pb_game_checksum&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="555" column="0"/>
+            <symbol>pb_game_checksum</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_get_events&apos; is never used." verbose="The function &apos;pb_game_get_events&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="582" column="0"/>
+            <symbol>pb_game_get_events</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_clear_events&apos; is never used." verbose="The function &apos;pb_game_clear_events&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="592" column="0"/>
+            <symbol>pb_game_clear_events</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_game_get_trajectory&apos; is never used." verbose="The function &apos;pb_game_get_trajectory&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_game.c" line="608" column="0"/>
+            <symbol>pb_game_get_trajectory</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_neighbors_axial&apos; is never used." verbose="The function &apos;pb_hex_neighbors_axial&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="120" column="0"/>
+            <symbol>pb_hex_neighbors_axial</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_neighbor_axial&apos; is never used." verbose="The function &apos;pb_hex_neighbor_axial&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="128" column="0"/>
+            <symbol>pb_hex_neighbor_axial</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_neighbors_cube&apos; is never used." verbose="The function &apos;pb_hex_neighbors_cube&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="136" column="0"/>
+            <symbol>pb_hex_neighbors_cube</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_neighbor_cube&apos; is never used." verbose="The function &apos;pb_hex_neighbor_cube&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="145" column="0"/>
+            <symbol>pb_hex_neighbor_cube</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;max3_int&apos; is never used." verbose="The function &apos;max3_int&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="168" column="0"/>
+            <symbol>max3_int</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_hex_distance_axial&apos; is never used." verbose="The function &apos;pb_hex_distance_axial&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="179" column="0"/>
+            <symbol>pb_hex_distance_axial</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_axial_eq&apos; is never used." verbose="The function &apos;pb_axial_eq&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="194" column="0"/>
+            <symbol>pb_axial_eq</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_cube_eq&apos; is never used." verbose="The function &apos;pb_cube_eq&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_hex.c" line="199" column="0"/>
+            <symbol>pb_cube_eq</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_jps_find_path&apos; is never used." verbose="The function &apos;pb_jps_find_path&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_path.c" line="452" column="0"/>
+            <symbol>pb_jps_find_path</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_path_distance&apos; is never used." verbose="The function &apos;pb_path_distance&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_path.c" line="477" column="0"/>
+            <symbol>pb_path_distance</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_is_reachable&apos; is never used." verbose="The function &apos;pb_is_reachable&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_path.c" line="488" column="0"/>
+            <symbol>pb_is_reachable</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_flood_fill&apos; is never used." verbose="The function &apos;pb_flood_fill&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_path.c" line="499" column="0"/>
+            <symbol>pb_flood_fill</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_get_line_of_sight&apos; is never used." verbose="The function &apos;pb_get_line_of_sight&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_path.c" line="599" column="0"/>
+            <symbol>pb_get_line_of_sight</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_calculate_fov&apos; is never used." verbose="The function &apos;pb_calculate_fov&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_path.c" line="628" column="0"/>
+            <symbol>pb_calculate_fov</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_pattern_name&apos; is never used." verbose="The function &apos;pb_pattern_name&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_pattern.c" line="42" column="0"/>
+            <symbol>pb_pattern_name</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_pattern_get_category&apos; is never used." verbose="The function &apos;pb_pattern_get_category&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_pattern.c" line="74" column="0"/>
+            <symbol>pb_pattern_get_category</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_pattern_to_svg&apos; is never used." verbose="The function &apos;pb_pattern_to_svg&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_pattern.c" line="414" column="0"/>
+            <symbol>pb_pattern_to_svg</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_pattern_map_is_valid&apos; is never used." verbose="The function &apos;pb_pattern_map_is_valid&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_pattern.c" line="465" column="0"/>
+            <symbol>pb_pattern_map_is_valid</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_varint_size&apos; is never used." verbose="The function &apos;pb_varint_size&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_replay.c" line="52" column="0"/>
+            <symbol>pb_varint_size</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_input_to_event_type&apos; is never used." verbose="The function &apos;pb_input_to_event_type&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_replay.c" line="127" column="0"/>
+            <symbol>pb_input_to_event_type</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_clear&apos; is never used." verbose="The function &apos;pb_replay_clear&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_replay.c" line="310" column="0"/>
+            <symbol>pb_replay_clear</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_record&apos; is never used." verbose="The function &apos;pb_replay_record&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_replay.c" line="390" column="0"/>
+            <symbol>pb_replay_record</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_save&apos; is never used." verbose="The function &apos;pb_replay_save&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_replay.c" line="644" column="0"/>
+            <symbol>pb_replay_save</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_load&apos; is never used." verbose="The function &apos;pb_replay_load&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_replay.c" line="671" column="0"/>
+            <symbol>pb_replay_load</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rng_set_state&apos; is never used." verbose="The function &apos;pb_rng_set_state&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_rng.c" line="64" column="0"/>
+            <symbol>pb_rng_set_state</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rng_get_state&apos; is never used." verbose="The function &apos;pb_rng_get_state&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_rng.c" line="69" column="0"/>
+            <symbol>pb_rng_get_state</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rng_range_int&apos; is never used." verbose="The function &apos;pb_rng_range_int&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_rng.c" line="120" column="0"/>
+            <symbol>pb_rng_range_int</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rng_float_range&apos; is never used." verbose="The function &apos;pb_rng_float_range&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_rng.c" line="136" column="0"/>
+            <symbol>pb_rng_float_range</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_rng_shuffle&apos; is never used." verbose="The function &apos;pb_rng_shuffle&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_rng.c" line="145" column="0"/>
+            <symbol>pb_rng_shuffle</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_rotate&apos; is never used." verbose="The function &apos;pb_session_rotate&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="253" column="0"/>
+            <symbol>pb_session_rotate</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_pause&apos; is never used." verbose="The function &apos;pb_session_pause&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="292" column="0"/>
+            <symbol>pb_session_pause</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_seek&apos; is never used." verbose="The function &apos;pb_session_seek&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="363" column="0"/>
+            <symbol>pb_session_seek</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_set_speed&apos; is never used." verbose="The function &apos;pb_session_set_speed&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="401" column="0"/>
+            <symbol>pb_session_set_speed</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_get_progress&apos; is never used." verbose="The function &apos;pb_session_get_progress&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="408" column="0"/>
+            <symbol>pb_session_get_progress</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_finalize&apos; is never used." verbose="The function &apos;pb_session_finalize&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="425" column="0"/>
+            <symbol>pb_session_finalize</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_get_replay&apos; is never used." verbose="The function &apos;pb_session_get_replay&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="438" column="0"/>
+            <symbol>pb_session_get_replay</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_extract_replay&apos; is never used." verbose="The function &apos;pb_session_extract_replay&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="444" column="0"/>
+            <symbol>pb_session_extract_replay</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_has_desync&apos; is never used." verbose="The function &apos;pb_session_has_desync&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="459" column="0"/>
+            <symbol>pb_session_has_desync</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_get_desync&apos; is never used." verbose="The function &apos;pb_session_get_desync&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="465" column="0"/>
+            <symbol>pb_session_get_desync</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_session_verify_checkpoint&apos; is never used." verbose="The function &apos;pb_session_verify_checkpoint&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="471" column="0"/>
+            <symbol>pb_session_verify_checkpoint</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_twin_simulate&apos; is never used." verbose="The function &apos;pb_twin_simulate&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="489" column="0"/>
+            <symbol>pb_twin_simulate</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_create_golden_checksums&apos; is never used." verbose="The function &apos;pb_create_golden_checksums&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_session.c" line="534" column="0"/>
+            <symbol>pb_create_golden_checksums</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_circles_overlap&apos; is never used." verbose="The function &apos;pb_circles_overlap&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_shot.c" line="56" column="0"/>
+            <symbol>pb_circles_overlap</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_find_snap_cell_directed&apos; is never used." verbose="The function &apos;pb_find_snap_cell_directed&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_shot.c" line="432" column="0"/>
+            <symbol>pb_find_snap_cell_directed</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_apply_magnetic_forces&apos; is never used." verbose="The function &apos;pb_apply_magnetic_forces&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_shot.c" line="536" column="0"/>
+            <symbol>pb_apply_magnetic_forces</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_validate_level&apos; is never used." verbose="The function &apos;pb_validate_level&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_solver.c" line="123" column="0"/>
+            <symbol>pb_validate_level</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_find_reachable&apos; is never used." verbose="The function &apos;pb_find_reachable&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_solver.c" line="188" column="0"/>
+            <symbol>pb_find_reachable</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_solver_evaluate_move&apos; is never used." verbose="The function &apos;pb_solver_evaluate_move&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_solver.c" line="453" column="0"/>
+            <symbol>pb_solver_evaluate_move</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_analyze_solvability&apos; is never used." verbose="The function &apos;pb_analyze_solvability&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_solver.c" line="491" column="0"/>
+            <symbol>pb_analyze_solvability</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_estimate_difficulty&apos; is never used." verbose="The function &apos;pb_estimate_difficulty&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_solver.c" line="579" column="0"/>
+            <symbol>pb_estimate_difficulty</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_trajectory_compute&apos; is never used." verbose="The function &apos;pb_trajectory_compute&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_trajectory.c" line="297" column="0"/>
+            <symbol>pb_trajectory_compute</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_trajectory_get_landing&apos; is never used." verbose="The function &apos;pb_trajectory_get_landing&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_trajectory.c" line="382" column="0"/>
+            <symbol>pb_trajectory_get_landing</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_trajectory_total_distance&apos; is never used." verbose="The function &apos;pb_trajectory_total_distance&apos; is never used." cwe="561">
+            <location file="pb_core/src/core/pb_trajectory.c" line="434" column="0"/>
+            <symbol>pb_trajectory_total_distance</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_level_load_file&apos; is never used." verbose="The function &apos;pb_level_load_file&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="248" column="0"/>
+            <symbol>pb_level_load_file</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_level_data_free&apos; is never used." verbose="The function &apos;pb_level_data_free&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="261" column="0"/>
+            <symbol>pb_level_data_free</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_level_to_board&apos; is never used." verbose="The function &apos;pb_level_to_board&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="269" column="0"/>
+            <symbol>pb_level_to_board</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_theme_load_file&apos; is never used." verbose="The function &apos;pb_theme_load_file&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="416" column="0"/>
+            <symbol>pb_theme_load_file</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_theme_get_default&apos; is never used." verbose="The function &apos;pb_theme_get_default&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="429" column="0"/>
+            <symbol>pb_theme_get_default</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_ruleset_load_file&apos; is never used." verbose="The function &apos;pb_ruleset_load_file&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="573" column="0"/>
+            <symbol>pb_ruleset_load_file</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_load_file&apos; is never used." verbose="The function &apos;pb_replay_load_file&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="713" column="0"/>
+            <symbol>pb_replay_load_file</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_data_free&apos; is never used." verbose="The function &apos;pb_replay_data_free&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="726" column="0"/>
+            <symbol>pb_replay_data_free</symbol>
+        </error>
+        <error id="unusedFunction" severity="style" msg="The function &apos;pb_replay_save_file&apos; is never used." verbose="The function &apos;pb_replay_save_file&apos; is never used." cwe="561">
+            <location file="pb_core/src/data/pb_data.c" line="810" column="0"/>
+            <symbol>pb_replay_save_file</symbol>
+        </error>
+        <error id="checkersReport" severity="information" msg="Active checkers: There was critical errors (use --checkers-report=&lt;filename&gt; to see details)" verbose="Active checkers: There was critical errors (use --checkers-report=&lt;filename&gt; to see details)"/>
+    </errors>
+</results>

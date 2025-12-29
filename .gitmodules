@@ -16,3 +16,27 @@
 [submodule "colorblindness"]
 	path = colorblindness
 	url = git@github.com:Oichkatzelesfrettschen/Colorblindness.git
+[submodule "refs/puzzle-bobble-c"]
+	path = refs/puzzle-bobble-c
+	url = https://github.com/Oichkatzelesfrettschen/Puzzle-Bobble-C.git
+[submodule "refs/puzzle-bobble-sdl"]
+	path = refs/puzzle-bobble-sdl
+	url = https://github.com/Oichkatzelesfrettschen/Puzzle-Bobble.git
+[submodule "refs/km-bubble-shooter"]
+	path = refs/km-bubble-shooter
+	url = https://github.com/Oichkatzelesfrettschen/KM-Bubble-Shooter.git
+[submodule "refs/graph-bubble-shooter"]
+	path = refs/graph-bubble-shooter
+	url = https://github.com/Oichkatzelesfrettschen/Graph-in-Bubble-Shooter.git
+[submodule "refs/bustamove-np"]
+	path = refs/bustamove-np
+	url = https://github.com/Oichkatzelesfrettschen/bustamove.git
+[submodule "refs/jtbubl-fpga"]
+	path = refs/jtbubl-fpga
+	url = https://github.com/Oichkatzelesfrettschen/jtbubl.git
+[submodule "refs/puzzle-bobble-cpp"]
+	path = refs/puzzle-bobble-cpp
+	url = https://github.com/Oichkatzelesfrettschen/Puzzle-Bobble-1.git
+[submodule "refs/puzzle-bobble-js"]
+	path = refs/puzzle-bobble-js
+	url = https://github.com/Oichkatzelesfrettschen/puzzle-bobble-2.git
