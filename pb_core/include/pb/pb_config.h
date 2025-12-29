@@ -223,10 +223,20 @@
     #define PB_PLATFORM_16BIT 0
 #endif
 
-/* Detect freestanding (no OS) */
-#if defined(__GNUC__) && defined(__ELF__) && \
-    (defined(__arm__) || defined(__aarch64__) || \
-     defined(__riscv) || defined(__sh__) || defined(__m68k__))
+/* Detect freestanding (no OS) - must explicitly be set or detected
+ * via common bare-metal toolchain patterns. Hosted Linux cross-compilers
+ * define __linux__ so we exclude them. */
+#if defined(PB_FREESTANDING)
+    /* Already set by user */
+    #define PB_PLATFORM_FREESTANDING PB_FREESTANDING
+#elif PB_PLATFORM_8BIT
+    /* 8-bit platforms are always freestanding */
+    #define PB_PLATFORM_FREESTANDING 1
+#elif defined(__GNUC__) && !defined(__linux__) && !defined(__unix__) && \
+      !defined(__APPLE__) && !defined(_WIN32) && \
+      (defined(__arm__) || defined(__aarch64__) || \
+       defined(__riscv) || defined(__sh__) || defined(__m68k__))
+    /* Bare-metal embedded (no OS detected) */
     #define PB_PLATFORM_FREESTANDING 1
 #else
     #define PB_PLATFORM_FREESTANDING 0
@@ -259,17 +269,19 @@
     #define PB_UNLIKELY(x)  (x)
 #endif
 
-/* C89-compatible inline: use __inline__ for GCC/Clang, empty otherwise */
+/* C89-compatible inline: use static + inline variant for all standards.
+ * Static is required to avoid multiple definition errors when header is
+ * included in multiple translation units. */
 #if defined(PB_C89)
     #if defined(__GNUC__) || defined(__clang__)
-        #define PB_INLINE __inline__
+        #define PB_INLINE static __inline__
     #else
-        #define PB_INLINE
+        #define PB_INLINE static
     #endif
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-    #define PB_INLINE inline
+    #define PB_INLINE static inline
 #else
-    #define PB_INLINE
+    #define PB_INLINE static
 #endif
 
 /*============================================================================

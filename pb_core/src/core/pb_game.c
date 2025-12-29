@@ -10,8 +10,8 @@
 #include "pb/pb_game.h"
 #include "pb/pb_rng.h"
 #include "pb/pb_hex.h"
-#include <string.h>
-#include <math.h>
+
+#include "pb/pb_freestanding.h"
 
 /*============================================================================
  * Cell Index Conversion Helpers
@@ -41,6 +41,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 2,
         .shots_per_row_insert = 0,  /* No pressure */
         .initial_rows = 5,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_OVERFLOW,
         .allow_color_switch = false,
         .restrict_colors_to_board = true,
@@ -54,6 +55,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 2,
         .shots_per_row_insert = 8,  /* New row every 8 shots */
         .initial_rows = 4,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_OVERFLOW,
         .allow_color_switch = true,
         .restrict_colors_to_board = true,
@@ -67,6 +69,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 2,
         .shots_per_row_insert = 5,
         .initial_rows = 3,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_OVERFLOW,
         .allow_color_switch = true,
         .restrict_colors_to_board = false,
@@ -80,6 +83,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 2,
         .shots_per_row_insert = 0,
         .initial_rows = 6,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_TIMEOUT,
         .allow_color_switch = true,
         .restrict_colors_to_board = true,
@@ -93,6 +97,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 2,
         .shots_per_row_insert = 10,
         .initial_rows = 4,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_OVERFLOW,
         .allow_color_switch = true,
         .restrict_colors_to_board = true,
@@ -106,6 +111,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 2,
         .shots_per_row_insert = 12,
         .initial_rows = 5,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_OVERFLOW,
         .allow_color_switch = true,
         .restrict_colors_to_board = true,
@@ -119,6 +125,7 @@ static const pb_ruleset ruleset_defaults[PB_MODE_COUNT] = {
         .max_bounces = 99,  /* Unlimited bounces */
         .shots_per_row_insert = 0,
         .initial_rows = 4,
+        .bubble_radius = PB_INT_TO_FIXED(16),
         .lose_on = PB_LOSE_OVERFLOW,
         .allow_color_switch = true,
         .restrict_colors_to_board = false,
@@ -300,7 +307,7 @@ pb_result pb_game_fire(pb_game_state* state)
 
     /* Calculate cannon position */
     pb_playfield field;
-    pb_playfield_calc(&field, &state->board, 16.0f);  /* TODO: configurable radius */
+    pb_playfield_calc(&field, &state->board, state->ruleset.bubble_radius);
 
     /* Initialize shot */
     pb_shot_init(&state->shot, state->current_bubble, field.cannon_pos,
@@ -372,7 +379,7 @@ int pb_game_tick(pb_game_state* state)
     /* Process shot */
     if (state->shot.phase == PB_SHOT_MOVING) {
         pb_playfield field;
-        pb_playfield_calc(&field, &state->board, 16.0f);
+        pb_playfield_calc(&field, &state->board, state->ruleset.bubble_radius);
 
         pb_collision collision = pb_shot_step(&state->shot, &state->board,
                                               field.bubble_radius,
@@ -430,7 +437,28 @@ int pb_game_tick(pb_game_state* state)
                 if (state->ruleset.shots_per_row_insert > 0) {
                     state->shots_until_row--;
                     if (state->shots_until_row <= 0) {
-                        /* TODO: Insert row */
+                        /* Insert new row at top */
+                        uint8_t colors = state->ruleset.restrict_colors_to_board
+                                         ? pb_board_color_mask(&state->board)
+                                         : state->ruleset.allowed_colors;
+                        if (colors == 0) colors = state->ruleset.allowed_colors;
+
+                        if (!pb_board_insert_row(&state->board, &state->rng, colors)) {
+                            /* Row insertion caused overflow - game over */
+                            state->phase = PB_PHASE_LOST;
+                            pb_event lose_event = {
+                                .type = PB_EVENT_GAME_OVER,
+                                .frame = state->frame
+                            };
+                            pb_game_add_event(state, &lose_event);
+                        } else {
+                            /* Log row insert event */
+                            pb_event row_event = {
+                                .type = PB_EVENT_ROW_INSERTED,
+                                .frame = state->frame
+                            };
+                            pb_game_add_event(state, &row_event);
+                        }
                         state->shots_until_row = state->ruleset.shots_per_row_insert;
                     }
                 }
@@ -581,7 +609,7 @@ int pb_game_get_trajectory(const pb_game_state* state, pb_scalar angle,
                            pb_point* points, int max_points)
 {
     pb_playfield field;
-    pb_playfield_calc(&field, &state->board, PB_INT_TO_FIXED(16));
+    pb_playfield_calc(&field, &state->board, state->ruleset.bubble_radius);
 
     pb_vec2 velocity;
     velocity.x = PB_FIXED_MUL(PB_SCALAR_COS(angle), PB_DEFAULT_SHOT_SPEED);

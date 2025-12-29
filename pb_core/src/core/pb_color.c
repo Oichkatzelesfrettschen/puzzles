@@ -7,8 +7,8 @@
  */
 
 #include "pb/pb_color.h"
-#include <math.h>
-#include <string.h>
+#include "pb/pb_freestanding.h"
+
 #include <ctype.h>
 
 /* ============================================================================

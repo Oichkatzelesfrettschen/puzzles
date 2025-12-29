@@ -7,7 +7,7 @@
 
 #include "pb/pb_replay.h"
 #include <stdlib.h>
-#include <string.h>
+
 #include <stdio.h>
 
 /*============================================================================
@@ -51,10 +51,11 @@ int pb_varint_decode(const uint8_t* data, int len, uint32_t* out_value)
 
 int pb_varint_size(uint32_t value)
 {
-    if (value < (1 << 7)) return 1;
-    if (value < (1 << 14)) return 2;
-    if (value < (1 << 21)) return 3;
-    if (value < (1 << 28)) return 4;
+    /* Use uint32_t casts to avoid shift overflow on 8/16-bit platforms */
+    if (value < ((uint32_t)1 << 7)) return 1;
+    if (value < ((uint32_t)1 << 14)) return 2;
+    if (value < ((uint32_t)1 << 21)) return 3;
+    if (value < ((uint32_t)1 << 28)) return 4;
     return 5;
 }
 

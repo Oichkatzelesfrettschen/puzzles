@@ -25,7 +25,7 @@ FIXED_POINT=1 make
 # Debug build with sanitizers
 DEBUG=1 make
 
-# Run tests (175 tests)
+# Run tests (306 tests)
 make test
 
 # Build SDL2 demo (requires SDL2, SDL2_image, SDL2_mixer)
@@ -63,7 +63,7 @@ pb_core/
 │   ├── data/             # JSON parsing (cJSON)
 │   ├── platform/         # SDL2 backend
 │   └── vendor/           # Third-party (cJSON)
-├── tests/                # Test suite (175 tests)
+├── tests/                # Test suite (306 tests)
 ├── tools/                # CLI tools (pb_validate)
 ├── examples/             # Standalone examples
 ├── levels/               # Example levels
@@ -310,18 +310,23 @@ while (pb_playback_has_events(pb)) {
 
 ## Tests
 
-The library includes 175 tests covering:
+The library includes 306 tests across 15 test files:
 
 - Hex coordinate math (21 tests)
-- Board operations and matching (17 tests)
+- Board operations and matching (24 tests)
 - Shot physics and collision (17 tests)
 - Game controller logic (23 tests)
 - Replay serialization (17 tests)
 - Session management (22 tests)
 - Checksum verification (17 tests)
-- Color/CVD calculations (28 tests)
+- Color calculations (28 tests)
+- CVD simulation and analysis (28 tests)
 - Data loading (13 tests)
 - Solver/validation (17 tests)
+- Effects system (21 tests)
+- Trajectory computation (19 tests)
+- RNG and shuffle (19 tests)
+- Pattern overlays (20 tests)
 
 Run with:
 ```bash

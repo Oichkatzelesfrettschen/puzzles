@@ -7,7 +7,7 @@
 
 #include "pb/pb_checksum.h"
 #include "pb/pb_board.h"
-#include <string.h>
+
 
 /*============================================================================
  * CRC-32 Table (ISO-HDLC polynomial 0xEDB88320)

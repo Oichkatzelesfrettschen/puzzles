@@ -7,9 +7,9 @@
 #include "pb/pb_solver.h"
 #include "pb/pb_shot.h"
 #include "pb/pb_rng.h"
-#include <string.h>
+
 #include <stdio.h>
-#include <math.h>
+#include "pb/pb_freestanding.h"
 
 /*============================================================================
  * Board Analysis
@@ -324,13 +324,51 @@ static float evaluate_target(const pb_board* board, pb_offset target,
     return score;
 }
 
+/* Calculate expected pops and drops for a move without modifying board */
+static void calculate_move_results(const pb_board* board, pb_offset target,
+                                   uint8_t color_id, int match_threshold,
+                                   int* out_pops, int* out_drops)
+{
+    *out_pops = 0;
+    *out_drops = 0;
+
+    /* Create temporary board copy to simulate the move */
+    pb_board temp_board = *board;
+
+    /* Place bubble at target */
+    pb_bubble b = {
+        .kind = PB_KIND_COLORED,
+        .color_id = color_id,
+        .flags = 0,
+        .special = PB_SPECIAL_NONE,
+        .payload = {0}
+    };
+    pb_board_set(&temp_board, target, b);
+
+    /* Find matches */
+    pb_visit_result matches;
+    int match_count = pb_find_matches(&temp_board, target, &matches);
+
+    if (match_count >= match_threshold) {
+        *out_pops = match_count;
+
+        /* Remove matches to find orphans */
+        pb_board_remove_cells(&temp_board, &matches);
+
+        /* Find orphans that would drop */
+        pb_visit_result orphans;
+        int orphan_count = pb_find_orphans(&temp_board, &orphans);
+        *out_drops = orphan_count;
+    }
+}
+
 int pb_solver_find_moves(pb_solver* solver, pb_bubble current,
                          pb_move_list* moves)
 {
     moves->count = 0;
 
     /* Get board dimensions for simulation */
-    pb_scalar radius = PB_FLOAT_TO_FIXED(16.0f);  /* Standard bubble radius */
+    pb_scalar radius = solver->ruleset.bubble_radius;
     pb_scalar left_wall = PB_FLOAT_TO_FIXED(0.0f);
     pb_scalar right_wall = PB_FLOAT_TO_FIXED((float)(solver->board.cols_even * 32));
     pb_scalar ceiling = PB_FLOAT_TO_FIXED(0.0f);
@@ -383,12 +421,17 @@ int pb_solver_find_moves(pb_solver* solver, pb_bubble current,
         float score = evaluate_target(&solver->board, snap, current.color_id,
                                       solver->ruleset.match_threshold);
 
+        /* Calculate expected results */
+        int pops = 0, drops = 0;
+        calculate_move_results(&solver->board, snap, current.color_id,
+                               solver->ruleset.match_threshold, &pops, &drops);
+
         pb_move* move = &moves->moves[moves->count];
         move->angle = angle;
         move->color_id = current.color_id;
         move->target = snap;
-        move->expected_pops = 0;  /* TODO: calculate */
-        move->expected_drops = 0;
+        move->expected_pops = pops;
+        move->expected_drops = drops;
         move->score = score;
         moves->count++;
     }

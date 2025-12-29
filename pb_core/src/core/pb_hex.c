@@ -8,7 +8,7 @@
  */
 
 #include "pb/pb_hex.h"
-#include <math.h>
+#include "pb/pb_freestanding.h"
 
 /*============================================================================
  * Static Data: Neighbor Offsets

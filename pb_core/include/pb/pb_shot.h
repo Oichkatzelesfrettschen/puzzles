@@ -34,6 +34,19 @@ extern "C" {
 #define PB_DEFAULT_MAX_BOUNCES 2
 
 /*============================================================================
+ * Magnetic Effect Constants
+ *============================================================================*/
+
+/* Default magnetic attraction strength */
+#define PB_MAGNETIC_DEFAULT_STRENGTH  PB_FLOAT_TO_FIXED(100.0f)
+
+/* Default magnetic attraction radius (pixels) */
+#define PB_MAGNETIC_DEFAULT_RADIUS    PB_FLOAT_TO_FIXED(80.0f)
+
+/* Minimum distance to avoid singularity (clamped) */
+#define PB_MAGNETIC_MIN_DISTANCE      PB_FLOAT_TO_FIXED(4.0f)
+
+/*============================================================================
  * Collision Result
  *============================================================================*/
 
@@ -186,6 +199,36 @@ pb_vec2 pb_vec2_normalize(pb_vec2 v);
  * Reflect vector off a surface with given normal.
  */
 pb_vec2 pb_vec2_reflect(pb_vec2 v, pb_vec2 normal);
+
+/*============================================================================
+ * Magnetic Force
+ *============================================================================*/
+
+/**
+ * Calculate magnetic attraction force from a magnetic bubble.
+ *
+ * Uses inverse-square law: F = strength / distance^2
+ * Clamped at minimum distance to avoid singularity.
+ *
+ * @param shot_pos       Current shot position
+ * @param magnet_pos     Position of magnetic bubble
+ * @param magnet_strength Attraction strength (use PB_MAGNETIC_DEFAULT_STRENGTH)
+ * @param max_radius     Maximum attraction radius (force is 0 beyond this)
+ * @return               Force vector pointing toward magnet
+ */
+pb_vec2 pb_magnetic_force(pb_point shot_pos, pb_point magnet_pos,
+                          pb_scalar magnet_strength, pb_scalar max_radius);
+
+/**
+ * Apply magnetic forces from all magnetic bubbles on the board.
+ * Modifies velocity in-place.
+ *
+ * @param shot      Shot state (velocity will be modified)
+ * @param board     Board containing magnetic bubbles
+ * @param radius    Bubble radius (for pixel coordinate conversion)
+ */
+void pb_apply_magnetic_forces(pb_shot* shot, const pb_board* board,
+                              pb_scalar radius);
 
 #ifdef __cplusplus
 }

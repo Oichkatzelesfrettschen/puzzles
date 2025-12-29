@@ -206,6 +206,17 @@ bool pb_board_is_clear(const pb_board* board);
  */
 uint32_t pb_board_checksum(const pb_board* board);
 
+/**
+ * Insert a new row at the top, shifting existing rows down.
+ * Used for survival/arcade mode pressure.
+ *
+ * @param board         The board to modify
+ * @param rng           RNG for generating new bubble colors
+ * @param allowed_colors Bitmask of allowed color indices
+ * @return              true if successful, false if overflow (bubbles pushed off bottom)
+ */
+bool pb_board_insert_row(pb_board* board, pb_rng* rng, uint8_t allowed_colors);
+
 #ifdef __cplusplus
 }
 #endif

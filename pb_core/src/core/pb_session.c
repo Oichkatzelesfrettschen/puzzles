@@ -7,7 +7,7 @@
 
 #include "pb/pb_session.h"
 #include "pb/pb_board.h"
-#include <string.h>
+
 
 /*============================================================================
  * Internal Helpers

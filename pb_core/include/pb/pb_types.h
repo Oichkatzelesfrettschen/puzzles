@@ -17,6 +17,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+/* Freestanding-compatible math functions */
+#include "pb_freestanding.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,10 +47,16 @@ typedef int32_t pb_fixed;
 #define PB_FIXED_DIV(a,b) ((pb_fixed)(((int64_t)(a) << PB_FIXED_SHIFT) / (b)))
 #define PB_SCALAR_ABS(x) ((x) < 0 ? -(x) : (x))
 #define PB_SCALAR_ROUND(x) PB_FIXED_TO_INT((x) + PB_FIXED_HALF)
-/* Trig/sqrt: convert to float, apply, convert back (TODO: pure integer impl) */
-#define PB_SCALAR_SIN(x) PB_FLOAT_TO_FIXED(sinf(PB_FIXED_TO_FLOAT(x)))
-#define PB_SCALAR_COS(x) PB_FLOAT_TO_FIXED(cosf(PB_FIXED_TO_FLOAT(x)))
-#define PB_SCALAR_SQRT(x) PB_FLOAT_TO_FIXED(sqrtf(PB_FIXED_TO_FLOAT(x)))
+/* Pure integer trig when freestanding, otherwise convert through float */
+#if PB_FREESTANDING
+#define PB_SCALAR_SIN(x) pb_fp_sin(x)
+#define PB_SCALAR_COS(x) pb_fp_cos(x)
+#define PB_SCALAR_SQRT(x) pb_fp_sqrt(x)
+#else
+#define PB_SCALAR_SIN(x) PB_FLOAT_TO_FIXED(pb_sinf(PB_FIXED_TO_FLOAT(x)))
+#define PB_SCALAR_COS(x) PB_FLOAT_TO_FIXED(pb_cosf(PB_FIXED_TO_FLOAT(x)))
+#define PB_SCALAR_SQRT(x) PB_FLOAT_TO_FIXED(pb_sqrtf(PB_FIXED_TO_FLOAT(x)))
+#endif
 #define PB_EPSILON 1               /* Smallest positive fixed-point value */
 typedef pb_fixed pb_scalar;
 #else
@@ -58,11 +67,11 @@ typedef float pb_scalar;
 #define PB_FIXED_TO_FLOAT(x) ((float)(x))
 #define PB_FIXED_MUL(a,b) ((a) * (b))
 #define PB_FIXED_DIV(a,b) ((a) / (b))
-#define PB_SCALAR_ABS(x) fabsf(x)
-#define PB_SCALAR_ROUND(x) roundf(x)
-#define PB_SCALAR_SIN(x) sinf(x)
-#define PB_SCALAR_COS(x) cosf(x)
-#define PB_SCALAR_SQRT(x) sqrtf(x)
+#define PB_SCALAR_ABS(x) pb_fabsf(x)
+#define PB_SCALAR_ROUND(x) pb_roundf(x)
+#define PB_SCALAR_SIN(x) pb_sinf(x)
+#define PB_SCALAR_COS(x) pb_cosf(x)
+#define PB_SCALAR_SQRT(x) pb_sqrtf(x)
 #define PB_EPSILON 1e-6f           /* Small epsilon for float comparisons */
 #endif
 
@@ -265,6 +274,7 @@ typedef struct pb_ruleset {
     int max_bounces;
     int shots_per_row_insert;   /* Shots before new row (survival mode) */
     int initial_rows;           /* Starting bubble rows */
+    pb_scalar bubble_radius;    /* Bubble display/collision radius */
     pb_lose_condition lose_on;
     bool allow_color_switch;    /* Can swap current/next bubble */
     bool restrict_colors_to_board; /* Only generate colors on board */

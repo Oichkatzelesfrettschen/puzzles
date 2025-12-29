@@ -9,13 +9,13 @@
 
 #include "pb/pb_rng.h"
 #include "pb/pb_config.h"
-#include <string.h>
+
 
 /*============================================================================
  * Internal Helpers
  *============================================================================*/
 
-static PB_INLINE uint32_t rotl(uint32_t x, int k)
+PB_INLINE uint32_t rotl(uint32_t x, int k)
 {
     return (x << k) | (x >> (32 - k));
 }

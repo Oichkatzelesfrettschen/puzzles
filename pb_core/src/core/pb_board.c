@@ -8,7 +8,8 @@
  */
 
 #include "pb/pb_board.h"
-#include <string.h>
+#include "pb/pb_rng.h"
+
 
 /*============================================================================
  * Board Initialization
@@ -428,4 +429,53 @@ uint32_t pb_board_checksum(const pb_board* board)
     hash *= 16777619u;
 
     return hash;
+}
+
+/*============================================================================
+ * Row Insertion (Survival Mode)
+ *============================================================================*/
+
+bool pb_board_insert_row(pb_board* board, pb_rng* rng, uint8_t allowed_colors)
+{
+    /* Check if bottom row has any bubbles (would cause overflow) */
+    int bottom_row = board->rows - 1;
+    int bottom_cols = pb_row_cols(bottom_row, board->cols_even, board->cols_odd);
+    bool will_overflow = false;
+
+    for (int col = 0; col < bottom_cols; col++) {
+        if (board->cells[bottom_row][col].kind != PB_KIND_NONE) {
+            will_overflow = true;
+            break;
+        }
+    }
+
+    /* Shift all rows down by one */
+    for (int row = board->rows - 1; row > 0; row--) {
+        int cols = pb_row_cols(row, board->cols_even, board->cols_odd);
+        for (int col = 0; col < cols; col++) {
+            /* Copy from row above - handle column offset for hex grid */
+            pb_offset from = {row - 1, col};
+            if (pb_board_in_bounds(board, from)) {
+                board->cells[row][col] = board->cells[row - 1][col];
+            } else {
+                board->cells[row][col] = (pb_bubble){0};
+            }
+        }
+    }
+
+    /* Fill row 0 with new bubbles */
+    int row0_cols = pb_row_cols(0, board->cols_even, board->cols_odd);
+    for (int col = 0; col < row0_cols; col++) {
+        /* Pick random color from allowed colors */
+        int color = pb_rng_pick_color(rng, allowed_colors);
+
+        board->cells[0][col] = (pb_bubble){
+            .kind = PB_KIND_COLORED,
+            .color_id = (uint8_t)color,
+            .flags = 0,
+            .special = PB_SPECIAL_NONE
+        };
+    }
+
+    return !will_overflow;
 }

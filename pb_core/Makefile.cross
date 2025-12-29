@@ -18,6 +18,10 @@ COMMON_CFLAGS += -Wshadow -Wstrict-aliasing=2
 COMMON_CFLAGS += -fno-strict-aliasing  # Be safe with aliasing
 COMMON_CFLAGS += -Iinclude
 
+# Default syntax check flag (GCC-style)
+SYNTAX_GCC := -fsyntax-only
+SYNTAX_SDCC := --syntax-only
+
 # Level 2: Strict conversion warnings (enable after fixing float/int issues)
 # COMMON_CFLAGS += -Wconversion -Wsign-conversion -Wfloat-conversion
 
@@ -31,6 +35,17 @@ DATA_SRCS := $(wildcard $(SRC_DIR)/data/*.c)
 VENDOR_SRCS := $(wildcard $(SRC_DIR)/vendor/*.c)
 ALL_SRCS := $(CORE_SRCS) $(DATA_SRCS) $(VENDOR_SRCS)
 
+# Minimal source files for freestanding (exclude modules requiring stdio/complex math)
+EMBEDDED_EXCLUDE := src/core/pb_color.c src/core/pb_cvd.c src/core/pb_pattern.c \
+                    src/core/pb_replay.c src/core/pb_solver.c \
+                    src/data/pb_data.c src/vendor/cJSON.c
+EMBEDDED_SRCS := $(filter-out $(EMBEDDED_EXCLUDE),$(ALL_SRCS))
+
+# Ultra-minimal for 8-bit MCUs with severe constraints (8051: 256B RAM, 6502: 64KB)
+# Excludes pb_board.c (function pointer callbacks) and pb_game.c (uses board visitors)
+MICRO_EXCLUDE := $(EMBEDDED_EXCLUDE) src/core/pb_board.c src/core/pb_game.c src/core/pb_session.c
+MICRO_SRCS := $(filter-out $(MICRO_EXCLUDE),$(ALL_SRCS))
+
 # Build directories
 BUILD_BASE := build/cross
 LOG_DIR := build/cross/logs
@@ -41,47 +56,219 @@ LOG_DIR := build/cross/logs
 # x86_64 - Native (little-endian)
 ARCH_x86_64_CC := gcc
 ARCH_x86_64_CFLAGS := $(COMMON_CFLAGS)
+ARCH_x86_64_SYNTAX := $(SYNTAX_GCC)
 ARCH_x86_64_DESC := x86_64 (native, LE)
 
 # i386 - 32-bit x86 via multilib (little-endian)
 ARCH_i386_CC := gcc
 ARCH_i386_CFLAGS := $(COMMON_CFLAGS) -m32
+ARCH_i386_SYNTAX := $(SYNTAX_GCC)
 ARCH_i386_DESC := i386 (multilib, LE)
 
 # aarch64 - ARM 64-bit (little-endian)
 ARCH_aarch64_CC := aarch64-linux-gnu-gcc
 ARCH_aarch64_CFLAGS := $(COMMON_CFLAGS)
+ARCH_aarch64_SYNTAX := $(SYNTAX_GCC)
 ARCH_aarch64_DESC := aarch64 (ARM64, LE)
 
 # riscv64 - RISC-V 64-bit (little-endian)
 ARCH_riscv64_CC := riscv64-linux-gnu-gcc
 ARCH_riscv64_CFLAGS := $(COMMON_CFLAGS)
+ARCH_riscv64_SYNTAX := $(SYNTAX_GCC)
 ARCH_riscv64_DESC := riscv64 (RISC-V, LE)
 
 # armv7hf - ARM 32-bit hard-float (little-endian) - AUR package
 ARCH_armv7_CC := arm-linux-gnueabihf-gcc
 ARCH_armv7_CFLAGS := $(COMMON_CFLAGS)
+ARCH_armv7_SYNTAX := $(SYNTAX_GCC)
 ARCH_armv7_DESC := armv7hf (ARM32, LE)
 
 # powerpc32 - PowerPC 32-bit (big-endian) - AUR package
 ARCH_ppc32_CC := powerpc-linux-gnu-gcc
 ARCH_ppc32_CFLAGS := $(COMMON_CFLAGS)
+ARCH_ppc32_SYNTAX := $(SYNTAX_GCC)
 ARCH_ppc32_DESC := ppc32 (PowerPC, BE)
 
 # powerpc64 - PowerPC 64-bit (big-endian) - AUR package
 ARCH_ppc64_CC := powerpc64-linux-gnu-gcc
 ARCH_ppc64_CFLAGS := $(COMMON_CFLAGS)
+ARCH_ppc64_SYNTAX := $(SYNTAX_GCC)
 ARCH_ppc64_DESC := ppc64 (PowerPC64, BE)
 
 # powerpc64le - PowerPC 64-bit (little-endian) - AUR package
 ARCH_ppc64le_CC := powerpc64le-linux-gnu-gcc
 ARCH_ppc64le_CFLAGS := $(COMMON_CFLAGS)
+ARCH_ppc64le_SYNTAX := $(SYNTAX_GCC)
 ARCH_ppc64le_DESC := ppc64le (PowerPC64, LE)
+
+#============================================================================
+# Bootlin Toolchains (pre-built cross-compilers from bootlin.com)
+#============================================================================
+
+# PowerPC 440FP (Book-E, glibc)
+ARCH_ppc440_CC := /opt/powerpc-440fp-glibc-bleeding-edge/bin/powerpc-linux-gcc
+ARCH_ppc440_CFLAGS := $(COMMON_CFLAGS)
+ARCH_ppc440_SYNTAX := $(SYNTAX_GCC)
+ARCH_ppc440_DESC := ppc440 (Bootlin, BE)
+
+# PowerPC64 Power8 (musl libc)
+ARCH_ppc64_musl_CC := /opt/powerpc64-power8-musl-bleeding-edge/bin/powerpc64-linux-gcc
+ARCH_ppc64_musl_CFLAGS := $(COMMON_CFLAGS)
+ARCH_ppc64_musl_SYNTAX := $(SYNTAX_GCC)
+ARCH_ppc64_musl_DESC := ppc64-musl (Bootlin, BE)
+
+# PowerPC64le Power8 (glibc)
+ARCH_ppc64le_bootlin_CC := /opt/powerpc64le-power8-glibc-bleeding-edge/bin/powerpc64le-linux-gcc
+ARCH_ppc64le_bootlin_CFLAGS := $(COMMON_CFLAGS)
+ARCH_ppc64le_bootlin_SYNTAX := $(SYNTAX_GCC)
+ARCH_ppc64le_bootlin_DESC := ppc64le (Bootlin, LE)
+
+#============================================================================
+# Freestanding / Embedded Targets (no standard library)
+#============================================================================
+
+# Common flags for freestanding targets (no libc)
+FREESTANDING_CFLAGS := -Wall -Wextra -pedantic -O2 -ffreestanding -nostdlib
+FREESTANDING_CFLAGS += -Iinclude
+
+# AVR 8-bit microcontroller (ATmega328p as default)
+ARCH_avr_CC := avr-gcc
+ARCH_avr_CFLAGS := $(FREESTANDING_CFLAGS) -mmcu=atmega328p -std=c99 -DPB_SIZE_MICRO=1 -DPB_FREESTANDING=1
+ARCH_avr_SYNTAX := $(SYNTAX_GCC)
+ARCH_avr_SRCS := $(EMBEDDED_SRCS)
+ARCH_avr_DESC := avr (ATmega328p, 8-bit)
+
+# SuperH SH3 (32-bit embedded)
+ARCH_sh3_CC := sh-elf-gcc
+ARCH_sh3_CFLAGS := $(FREESTANDING_CFLAGS) -m3 -std=c99 -DPB_FREESTANDING=1
+ARCH_sh3_SYNTAX := $(SYNTAX_GCC)
+ARCH_sh3_SRCS := $(EMBEDDED_SRCS)
+ARCH_sh3_DESC := sh3 (SuperH, 32-bit)
+
+# ARM Cortex-M (bare metal)
+ARCH_cortexm_CC := arm-none-eabi-gcc
+ARCH_cortexm_CFLAGS := $(FREESTANDING_CFLAGS) -mcpu=cortex-m4 -mthumb -std=c99 -DPB_FREESTANDING=1
+ARCH_cortexm_SYNTAX := $(SYNTAX_GCC)
+ARCH_cortexm_SRCS := $(EMBEDDED_SRCS)
+ARCH_cortexm_DESC := cortex-m4 (ARM, 32-bit)
+
+# MSP430 (16-bit ultra-low-power)
+ARCH_msp430_CC := msp430-elf-gcc
+ARCH_msp430_CFLAGS := $(FREESTANDING_CFLAGS) -mmcu=msp430f5529 -std=c99 -DPB_SIZE_MINI=1
+ARCH_msp430_SYNTAX := $(SYNTAX_GCC)
+ARCH_msp430_SRCS := $(EMBEDDED_SRCS)
+ARCH_msp430_DESC := msp430 (TI, 16-bit)
+
+# m68k - Motorola 68000 (bare metal)
+ARCH_m68k_CC := m68k-elf-gcc
+ARCH_m68k_CFLAGS := $(FREESTANDING_CFLAGS) -m68000 -std=c99 -DPB_FREESTANDING=1
+ARCH_m68k_SYNTAX := $(SYNTAX_GCC)
+ARCH_m68k_SRCS := $(EMBEDDED_SRCS)
+ARCH_m68k_DESC := m68k (Motorola 68000)
+
+# or1k - OpenRISC 1000 (bare metal)
+ARCH_or1k_CC := or1k-elf-gcc
+ARCH_or1k_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1
+ARCH_or1k_SYNTAX := $(SYNTAX_GCC)
+ARCH_or1k_SRCS := $(EMBEDDED_SRCS)
+ARCH_or1k_DESC := or1k (OpenRISC)
+
+# lm32 - LatticeMico32 (FPGA soft-core)
+ARCH_lm32_CC := lm32-elf-gcc
+ARCH_lm32_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1
+ARCH_lm32_SYNTAX := $(SYNTAX_GCC)
+ARCH_lm32_SRCS := $(EMBEDDED_SRCS)
+ARCH_lm32_DESC := lm32 (LatticeMico32)
+
+# nds32 - Andes Technology (embedded)
+ARCH_nds32_CC := nds32le-elf-gcc
+ARCH_nds32_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1
+ARCH_nds32_SYNTAX := $(SYNTAX_GCC)
+ARCH_nds32_SRCS := $(EMBEDDED_SRCS)
+ARCH_nds32_DESC := nds32 (Andes NDS32)
+
+# MIPS64 big-endian (bare metal)
+ARCH_mips64_CC := mips64-elf-gcc
+ARCH_mips64_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1
+ARCH_mips64_SYNTAX := $(SYNTAX_GCC)
+ARCH_mips64_SRCS := $(EMBEDDED_SRCS)
+ARCH_mips64_DESC := mips64 (MIPS64, BE)
+
+# MIPS little-endian (bare metal)
+ARCH_mipsel_CC := mipsel-elf-gcc
+ARCH_mipsel_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1
+ARCH_mipsel_SYNTAX := $(SYNTAX_GCC)
+ARCH_mipsel_SRCS := $(EMBEDDED_SRCS)
+ARCH_mipsel_DESC := mipsel (MIPS32, LE)
+
+# ia16 - Intel 8086/80286 (16-bit DOS/BIOS)
+ARCH_ia16_CC := ia16-elf-gcc
+ARCH_ia16_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1 -DPB_SIZE_MINI=1
+ARCH_ia16_SYNTAX := $(SYNTAX_GCC)
+ARCH_ia16_SRCS := $(EMBEDDED_SRCS)
+ARCH_ia16_DESC := ia16 (8086/286, 16-bit)
+
+# RISC-V 64-bit bare metal (newlib)
+ARCH_rv64_elf_CC := riscv64-elf-gcc
+ARCH_rv64_elf_CFLAGS := $(FREESTANDING_CFLAGS) -std=c99 -DPB_FREESTANDING=1
+ARCH_rv64_elf_SYNTAX := $(SYNTAX_GCC)
+ARCH_rv64_elf_SRCS := $(EMBEDDED_SRCS)
+ARCH_rv64_elf_DESC := rv64-elf (RISC-V bare metal)
+
+#============================================================================
+# SDCC Targets (8-bit, different syntax than GCC)
+#============================================================================
+
+# Common SDCC flags
+SDCC_CFLAGS := --std-c99 -I include -DPB_FREESTANDING=1 -DPB_SIZE_MICRO=1
+
+# Z80 (Zilog, CP/M, ZX Spectrum, MSX)
+ARCH_z80_CC := sdcc
+ARCH_z80_CFLAGS := -mz80 $(SDCC_CFLAGS)
+ARCH_z80_SYNTAX := $(SYNTAX_SDCC)
+ARCH_z80_SRCS := $(EMBEDDED_SRCS)
+ARCH_z80_DESC := z80 (Zilog Z80, 8-bit)
+
+# SM83 (Game Boy CPU, Z80 variant)
+ARCH_sm83_CC := sdcc
+ARCH_sm83_CFLAGS := -msm83 $(SDCC_CFLAGS)
+ARCH_sm83_SYNTAX := $(SYNTAX_SDCC)
+ARCH_sm83_SRCS := $(EMBEDDED_SRCS)
+ARCH_sm83_DESC := sm83 (Game Boy, 8-bit)
+
+# STM8 (ST Microelectronics)
+ARCH_stm8_CC := sdcc
+ARCH_stm8_CFLAGS := -mstm8 $(SDCC_CFLAGS)
+ARCH_stm8_SYNTAX := $(SYNTAX_SDCC)
+ARCH_stm8_SRCS := $(EMBEDDED_SRCS)
+ARCH_stm8_DESC := stm8 (STM8, 8-bit)
+
+# MCS-51 (Intel 8051) - uses MICRO_SRCS due to function pointer limitations
+ARCH_mcs51_CC := sdcc
+ARCH_mcs51_CFLAGS := -mmcs51 $(SDCC_CFLAGS)
+ARCH_mcs51_SYNTAX := $(SYNTAX_SDCC)
+ARCH_mcs51_SRCS := $(MICRO_SRCS)
+ARCH_mcs51_DESC := mcs51 (Intel 8051, 8-bit)
+
+# MOS 6502 (via SDCC) - uses MICRO_SRCS due to function pointer limitations
+ARCH_mos6502_CC := sdcc
+ARCH_mos6502_CFLAGS := -mmos6502 $(SDCC_CFLAGS)
+ARCH_mos6502_SYNTAX := $(SYNTAX_SDCC)
+ARCH_mos6502_SRCS := $(MICRO_SRCS)
+ARCH_mos6502_DESC := mos6502 (MOS 6502, 8-bit)
+
+#============================================================================
+# Architecture Lists
+#============================================================================
 
 # Available architectures (add to this list as toolchains become available)
 CORE_ARCHS := x86_64 i386 aarch64 riscv64
 AUR_ARCHS := armv7 ppc32 ppc64 ppc64le
-ALL_ARCHS := $(CORE_ARCHS) $(AUR_ARCHS)
+BOOTLIN_ARCHS := ppc440 ppc64_musl ppc64le_bootlin
+EMBEDDED_GCC := avr sh3 cortexm msp430 m68k or1k lm32 nds32 mips64 mipsel ia16 rv64_elf
+EMBEDDED_SDCC := z80 sm83 stm8 mcs51 mos6502
+EMBEDDED_ARCHS := $(EMBEDDED_GCC) $(EMBEDDED_SDCC)
+ALL_ARCHS := $(CORE_ARCHS) $(AUR_ARCHS) $(BOOTLIN_ARCHS) $(EMBEDDED_ARCHS)
 
 .PHONY: all cross-all cross-core cross-available check-toolchains clean-cross report
 
@@ -95,46 +282,101 @@ cross-all: $(addprefix cross-,$(ALL_ARCHS))
 cross-core: $(addprefix cross-,$(CORE_ARCHS))
 
 # Build only for available toolchains
+# Uses a helper function to properly check each compiler
+define CHECK_AND_BUILD
+	@if command -v $(ARCH_$(1)_CC) >/dev/null 2>&1; then \
+		$(MAKE) -f Makefile.cross cross-$(1); \
+	else \
+		echo "[SKIP] $(1): $(ARCH_$(1)_CC) not found" | tee -a $(LOG_DIR)/summary.log; \
+	fi
+endef
+
 cross-available:
 	@mkdir -p $(LOG_DIR)
 	@echo "=== pb_core Cross-Compilation Matrix ===" | tee $(LOG_DIR)/summary.log
 	@echo "Started: $$(date)" | tee -a $(LOG_DIR)/summary.log
 	@echo "" | tee -a $(LOG_DIR)/summary.log
-	@for arch in $(ALL_ARCHS); do \
-		cc_var="ARCH_$${arch}_CC"; \
-		cc=$$(eval echo \$$$${cc_var}); \
-		if command -v $$cc >/dev/null 2>&1; then \
-			$(MAKE) -f Makefile.cross cross-$$arch; \
-		else \
-			echo "[SKIP] $$arch: $$cc not found" | tee -a $(LOG_DIR)/summary.log; \
-		fi; \
-	done
+	$(call CHECK_AND_BUILD,x86_64)
+	$(call CHECK_AND_BUILD,i386)
+	$(call CHECK_AND_BUILD,aarch64)
+	$(call CHECK_AND_BUILD,riscv64)
+	$(call CHECK_AND_BUILD,armv7)
+	$(call CHECK_AND_BUILD,ppc32)
+	$(call CHECK_AND_BUILD,ppc64)
+	$(call CHECK_AND_BUILD,ppc64le)
+	$(call CHECK_AND_BUILD,ppc440)
+	$(call CHECK_AND_BUILD,ppc64_musl)
+	$(call CHECK_AND_BUILD,ppc64le_bootlin)
+	$(call CHECK_AND_BUILD,avr)
+	$(call CHECK_AND_BUILD,sh3)
+	$(call CHECK_AND_BUILD,cortexm)
+	$(call CHECK_AND_BUILD,msp430)
+	$(call CHECK_AND_BUILD,m68k)
+	$(call CHECK_AND_BUILD,or1k)
+	$(call CHECK_AND_BUILD,lm32)
+	$(call CHECK_AND_BUILD,nds32)
+	$(call CHECK_AND_BUILD,mips64)
+	$(call CHECK_AND_BUILD,mipsel)
+	$(call CHECK_AND_BUILD,ia16)
+	$(call CHECK_AND_BUILD,rv64_elf)
+	$(call CHECK_AND_BUILD,z80)
+	$(call CHECK_AND_BUILD,sm83)
+	$(call CHECK_AND_BUILD,stm8)
+	$(call CHECK_AND_BUILD,mcs51)
+	$(call CHECK_AND_BUILD,mos6502)
 	@echo "" | tee -a $(LOG_DIR)/summary.log
 	@echo "Finished: $$(date)" | tee -a $(LOG_DIR)/summary.log
 	@echo "See $(LOG_DIR)/ for detailed logs"
 
 # Check which toolchains are available
+define CHECK_TOOLCHAIN
+	@if command -v $(ARCH_$(1)_CC) >/dev/null 2>&1; then \
+		version=$$($(ARCH_$(1)_CC) --version 2>/dev/null | head -1); \
+		printf "[OK]   %-12s %-30s %s\n" "$(1)" "$(ARCH_$(1)_DESC)" "$$version"; \
+	else \
+		printf "[MISS] %-12s %-30s %s\n" "$(1)" "$(ARCH_$(1)_DESC)" "$(ARCH_$(1)_CC) not found"; \
+	fi
+endef
+
 check-toolchains:
 	@echo "=== Cross-Compiler Toolchain Availability ==="
-	@for arch in $(ALL_ARCHS); do \
-		cc_var="ARCH_$${arch}_CC"; \
-		desc_var="ARCH_$${arch}_DESC"; \
-		cc=$$(eval echo \$$$${cc_var}); \
-		desc=$$(eval echo \$$$${desc_var}); \
-		if command -v $$cc >/dev/null 2>&1; then \
-			version=$$($$cc --version 2>/dev/null | head -1); \
-			printf "[OK]   %-12s %-30s %s\n" "$$arch" "$$desc" "$$version"; \
-		else \
-			printf "[MISS] %-12s %-30s %s\n" "$$arch" "$$desc" "$$cc not found"; \
-		fi; \
-	done
+	$(call CHECK_TOOLCHAIN,x86_64)
+	$(call CHECK_TOOLCHAIN,i386)
+	$(call CHECK_TOOLCHAIN,aarch64)
+	$(call CHECK_TOOLCHAIN,riscv64)
+	$(call CHECK_TOOLCHAIN,armv7)
+	$(call CHECK_TOOLCHAIN,ppc32)
+	$(call CHECK_TOOLCHAIN,ppc64)
+	$(call CHECK_TOOLCHAIN,ppc64le)
+	$(call CHECK_TOOLCHAIN,ppc440)
+	$(call CHECK_TOOLCHAIN,ppc64_musl)
+	$(call CHECK_TOOLCHAIN,ppc64le_bootlin)
+	$(call CHECK_TOOLCHAIN,avr)
+	$(call CHECK_TOOLCHAIN,sh3)
+	$(call CHECK_TOOLCHAIN,cortexm)
+	$(call CHECK_TOOLCHAIN,msp430)
+	$(call CHECK_TOOLCHAIN,m68k)
+	$(call CHECK_TOOLCHAIN,or1k)
+	$(call CHECK_TOOLCHAIN,lm32)
+	$(call CHECK_TOOLCHAIN,nds32)
+	$(call CHECK_TOOLCHAIN,mips64)
+	$(call CHECK_TOOLCHAIN,mipsel)
+	$(call CHECK_TOOLCHAIN,ia16)
+	$(call CHECK_TOOLCHAIN,rv64_elf)
+	$(call CHECK_TOOLCHAIN,z80)
+	$(call CHECK_TOOLCHAIN,sm83)
+	$(call CHECK_TOOLCHAIN,stm8)
+	$(call CHECK_TOOLCHAIN,mcs51)
+	$(call CHECK_TOOLCHAIN,mos6502)
 
-# Generic cross-compile rule (uses -fsyntax-only for quick validation)
+# Generic cross-compile rule (uses -fsyntax-only / --syntax-only for validation)
+# Uses ARCH_*_SRCS if defined (for embedded targets), otherwise ALL_SRCS
+# GCC uses -fsyntax-only, SDCC uses --syntax-only
 define CROSS_RULE
 cross-$(1):
 	@mkdir -p $(BUILD_BASE)/$(1) $(LOG_DIR)
 	@echo "[BUILD] $(1): $$(ARCH_$(1)_DESC)"
-	@if $$(ARCH_$(1)_CC) $$(ARCH_$(1)_CFLAGS) -fsyntax-only $(ALL_SRCS) 2>$(LOG_DIR)/$(1).log; then \
+	@if $$(ARCH_$(1)_CC) $$(ARCH_$(1)_CFLAGS) $(ARCH_$(1)_SYNTAX) $$(or $$(ARCH_$(1)_SRCS),$(ALL_SRCS)) 2>$(LOG_DIR)/$(1).log; then \
 		echo "[OK]    $(1): Compilation successful" | tee -a $(LOG_DIR)/summary.log; \
 	else \
 		echo "[FAIL]  $(1): See $(LOG_DIR)/$(1).log" | tee -a $(LOG_DIR)/summary.log; \

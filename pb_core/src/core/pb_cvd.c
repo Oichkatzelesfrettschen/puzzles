@@ -13,8 +13,8 @@
  */
 
 #include "pb/pb_cvd.h"
-#include <math.h>
-#include <string.h>
+#include "pb/pb_freestanding.h"
+
 
 /* ============================================================================
  * LMS Color Space Matrices (Hunt-Pointer-Estevez normalized to D65)

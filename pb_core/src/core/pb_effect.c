@@ -9,7 +9,7 @@
 
 #include "pb/pb_effect.h"
 #include "pb/pb_hex.h"
-#include <string.h>
+
 
 /*============================================================================
  * Default Effect Definitions

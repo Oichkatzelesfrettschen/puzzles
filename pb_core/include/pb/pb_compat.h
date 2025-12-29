@@ -31,18 +31,21 @@
 
 /*============================================================================
  * C89 Compatibility: inline keyword
+ * Note: May already be defined by pb_config.h, so guard against redefinition.
  *============================================================================*/
 
-#if defined(PB_C99) || defined(PB_C11) || defined(PB_C17)
-    #define PB_INLINE static inline
-#elif defined(__GNUC__)
-    /* GCC extension for C89 */
-    #define PB_INLINE static __inline__
-#elif defined(_MSC_VER)
-    #define PB_INLINE static __inline
-#else
-    /* C89 fallback: no inline, just static */
-    #define PB_INLINE static
+#ifndef PB_INLINE
+    #if defined(PB_C99) || defined(PB_C11) || defined(PB_C17)
+        #define PB_INLINE static inline
+    #elif defined(__GNUC__)
+        /* GCC extension for C89 */
+        #define PB_INLINE static __inline__
+    #elif defined(_MSC_VER)
+        #define PB_INLINE static __inline
+    #else
+        /* C89 fallback: no inline, just static */
+        #define PB_INLINE static
+    #endif
 #endif
 
 /*============================================================================
@@ -132,7 +135,10 @@
 
 #if defined(PB_C99) || defined(PB_C11) || defined(PB_C17)
     #include <stdint.h>
-    #include <inttypes.h>
+    /* inttypes.h is NOT required in freestanding environments */
+    #if !PB_PLATFORM_FREESTANDING
+        #include <inttypes.h>
+    #endif
 #else
     /* C89: Provide fallback definitions */
     #ifndef _STDINT_H

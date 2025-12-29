@@ -10,7 +10,7 @@
 
 #include "pb/pb_shot.h"
 #include "pb/pb_board.h"
-#include <math.h>
+#include "pb/pb_freestanding.h"
 
 /*============================================================================
  * Vector Math Helpers
@@ -31,10 +31,14 @@ pb_scalar pb_point_distance(pb_point a, pb_point b)
 pb_vec2 pb_vec2_normalize(pb_vec2 v)
 {
     pb_scalar len_sq = PB_FIXED_MUL(v.x, v.x) + PB_FIXED_MUL(v.y, v.y);
-    if (len_sq < PB_FLOAT_TO_FIXED(1e-6f)) {
+    if (len_sq < PB_EPSILON) {
         return (pb_vec2){0, PB_FLOAT_TO_FIXED(-1.0f)};  /* Default to up */
     }
     pb_scalar len = PB_SCALAR_SQRT(len_sq);
+    /* Guard against sqrt returning zero due to fixed-point truncation */
+    if (len < PB_EPSILON) {
+        return (pb_vec2){0, PB_FLOAT_TO_FIXED(-1.0f)};  /* Default to up */
+    }
     return (pb_vec2){PB_FIXED_DIV(v.x, len), PB_FIXED_DIV(v.y, len)};
 }
 
@@ -181,7 +185,70 @@ static bool find_bubble_collision(pb_point origin, pb_vec2 dir, pb_scalar max_di
 }
 
 /*============================================================================
- * Physics Step
+ * Physics Step - Helper Functions
+ *============================================================================*/
+
+/* Check and update wall collision distance */
+static void check_wall_collision(pb_point pos, pb_vec2 dir, pb_scalar radius,
+                                  pb_scalar left_wall, pb_scalar right_wall,
+                                  pb_scalar* collision_dist, pb_collision_type* collision_type)
+{
+    pb_scalar t;
+    if (dir.x < 0) {
+        t = PB_FIXED_DIV(left_wall + radius - pos.x, dir.x);
+        if (t > 0 && t < *collision_dist) {
+            *collision_dist = t;
+            *collision_type = PB_COLLISION_WALL;
+        }
+    } else if (dir.x > 0) {
+        t = PB_FIXED_DIV(right_wall - radius - pos.x, dir.x);
+        if (t > 0 && t < *collision_dist) {
+            *collision_dist = t;
+            *collision_type = PB_COLLISION_WALL;
+        }
+    }
+}
+
+/* Check and update vertical boundary collision (ceiling or floor) */
+static void check_vertical_collision(pb_point pos, pb_vec2 dir, pb_scalar radius,
+                                      pb_scalar boundary, bool is_ceiling,
+                                      pb_scalar* collision_dist, pb_collision_type* collision_type)
+{
+    pb_scalar t;
+    if (is_ceiling && dir.y < 0) {
+        t = PB_FIXED_DIV(boundary + radius - pos.y, dir.y);
+        if (t > 0 && t < *collision_dist) {
+            *collision_dist = t;
+            *collision_type = PB_COLLISION_CEILING;
+        }
+    } else if (!is_ceiling && dir.y > 0) {
+        t = PB_FIXED_DIV(boundary - radius - pos.y, dir.y);
+        if (t > 0 && t < *collision_dist) {
+            *collision_dist = t;
+            *collision_type = PB_COLLISION_FLOOR;
+        }
+    }
+}
+
+/* Handle wall bounce, returns true if terminal (too many bounces) */
+static bool handle_wall_bounce(pb_shot* shot, pb_vec2* dir, pb_collision* result)
+{
+    if (shot->bounces >= shot->max_bounces) {
+        result->type = PB_COLLISION_BUBBLE;
+        shot->phase = PB_SHOT_COLLIDED;
+        return true;
+    }
+
+    pb_vec2 normal = {(dir->x > 0) ? PB_FLOAT_TO_FIXED(-1.0f) : PB_FLOAT_TO_FIXED(1.0f), 0};
+    pb_vec2 reflected = pb_vec2_reflect(shot->velocity, normal);
+    shot->velocity = reflected;
+    *dir = pb_vec2_normalize(reflected);
+    shot->bounces++;
+    return false;
+}
+
+/*============================================================================
+ * Physics Step - Main Function
  *============================================================================*/
 
 pb_collision pb_shot_step(pb_shot* shot, const pb_board* board, pb_scalar radius,
@@ -196,24 +263,22 @@ pb_collision pb_shot_step(pb_shot* shot, const pb_board* board, pb_scalar radius
 
     pb_scalar speed = PB_SCALAR_SQRT(PB_FIXED_MUL(shot->velocity.x, shot->velocity.x) +
                                       PB_FIXED_MUL(shot->velocity.y, shot->velocity.y));
-    pb_scalar epsilon = PB_FLOAT_TO_FIXED(1e-6f);
-    if (speed < epsilon) {
+    if (speed < PB_EPSILON) {
         return result;
     }
 
     pb_vec2 dir = pb_vec2_normalize(shot->velocity);
     pb_scalar remaining = speed;
-
     pb_scalar threshold = PB_FLOAT_TO_FIXED(0.001f);
+
     while (remaining > threshold) {
-        pb_scalar step_dist = remaining;
         pb_collision_type collision_type = PB_COLLISION_NONE;
-        pb_scalar collision_dist = remaining + PB_FLOAT_TO_FIXED(1.0f);  /* Beyond step distance */
+        pb_scalar collision_dist = remaining + PB_FLOAT_TO_FIXED(1.0f);
 
         /* Check bubble collision */
         pb_offset hit_cell = {-1, -1};
         pb_scalar bubble_dist = 0;
-        if (find_bubble_collision(shot->pos, dir, step_dist, board, radius,
+        if (find_bubble_collision(shot->pos, dir, remaining, board, radius,
                                    &hit_cell, &bubble_dist)) {
             if (bubble_dist < collision_dist) {
                 collision_dist = bubble_dist;
@@ -222,77 +287,40 @@ pb_collision pb_shot_step(pb_shot* shot, const pb_board* board, pb_scalar radius
             }
         }
 
-        /* Check wall collision */
-        if (dir.x < 0) {
-            pb_scalar t = PB_FIXED_DIV(left_wall + radius - shot->pos.x, dir.x);
-            if (t > 0 && t < collision_dist) {
-                collision_dist = t;
-                collision_type = PB_COLLISION_WALL;
-            }
-        } else if (dir.x > 0) {
-            pb_scalar t = PB_FIXED_DIV(right_wall - radius - shot->pos.x, dir.x);
-            if (t > 0 && t < collision_dist) {
-                collision_dist = t;
-                collision_type = PB_COLLISION_WALL;
-            }
-        }
+        /* Check wall, ceiling, floor collisions */
+        check_wall_collision(shot->pos, dir, radius, left_wall, right_wall,
+                             &collision_dist, &collision_type);
+        check_vertical_collision(shot->pos, dir, radius, ceiling, true,
+                                  &collision_dist, &collision_type);
+        check_vertical_collision(shot->pos, dir, radius, floor, false,
+                                  &collision_dist, &collision_type);
 
-        /* Check ceiling collision */
-        if (dir.y < 0) {
-            pb_scalar t = PB_FIXED_DIV(ceiling + radius - shot->pos.y, dir.y);
-            if (t > 0 && t < collision_dist) {
-                collision_dist = t;
-                collision_type = PB_COLLISION_CEILING;
-            }
-        }
-
-        /* Check floor (lose condition) */
-        if (dir.y > 0) {
-            pb_scalar t = PB_FIXED_DIV(floor - radius - shot->pos.y, dir.y);
-            if (t > 0 && t < collision_dist) {
-                collision_dist = t;
-                collision_type = PB_COLLISION_FLOOR;
-            }
-        }
-
+        /* No collision: move full step */
         if (collision_type == PB_COLLISION_NONE) {
-            /* No collision, move full step */
             shot->pos.x += PB_FIXED_MUL(dir.x, remaining);
             shot->pos.y += PB_FIXED_MUL(dir.y, remaining);
             remaining = 0;
-        } else {
-            /* Move to collision point */
-            shot->pos.x += PB_FIXED_MUL(dir.x, collision_dist);
-            shot->pos.y += PB_FIXED_MUL(dir.y, collision_dist);
-            remaining -= collision_dist;
+            continue;
+        }
 
-            result.type = collision_type;
-            result.hit_point = shot->pos;
-            result.distance = speed - remaining;
+        /* Move to collision point */
+        shot->pos.x += PB_FIXED_MUL(dir.x, collision_dist);
+        shot->pos.y += PB_FIXED_MUL(dir.y, collision_dist);
+        remaining -= collision_dist;
 
-            if (collision_type == PB_COLLISION_WALL) {
-                if (shot->bounces >= shot->max_bounces) {
-                    /* Treat as bubble collision after too many bounces */
-                    result.type = PB_COLLISION_BUBBLE;
-                    shot->phase = PB_SHOT_COLLIDED;
-                    return result;
-                }
+        result.type = collision_type;
+        result.hit_point = shot->pos;
+        result.distance = speed - remaining;
 
-                /* Reflect off wall (horizontal normal) */
-                pb_vec2 normal = {(dir.x > 0) ? PB_FLOAT_TO_FIXED(-1.0f) : PB_FLOAT_TO_FIXED(1.0f), 0};
-                pb_vec2 reflected = pb_vec2_reflect(shot->velocity, normal);
-                shot->velocity = reflected;
-                dir = pb_vec2_normalize(reflected);
-                shot->bounces++;
-
-                /* Continue with remaining distance */
-            } else if (collision_type == PB_COLLISION_CEILING ||
-                       collision_type == PB_COLLISION_BUBBLE ||
-                       collision_type == PB_COLLISION_FLOOR) {
-                /* Terminal collision */
-                shot->phase = PB_SHOT_COLLIDED;
+        /* Handle collision by type */
+        if (collision_type == PB_COLLISION_WALL) {
+            if (handle_wall_bounce(shot, &dir, &result)) {
                 return result;
             }
+        } else {
+            /* Terminal collision: ceiling, bubble, or floor */
+            shot->phase = PB_SHOT_COLLIDED;
+            return result;
         }
     }
 
@@ -458,4 +486,96 @@ pb_offset pb_find_snap_cell_directed(const pb_board* board, pb_offset hit_cell,
     }
 
     return best;
+}
+
+/*============================================================================
+ * Magnetic Force
+ *============================================================================*/
+
+pb_vec2 pb_magnetic_force(pb_point shot_pos, pb_point magnet_pos,
+                          pb_scalar magnet_strength, pb_scalar max_radius)
+{
+    pb_vec2 zero = {0, 0};
+
+    /* Direction from shot to magnet */
+    pb_scalar dx = magnet_pos.x - shot_pos.x;
+    pb_scalar dy = magnet_pos.y - shot_pos.y;
+
+    /* Distance squared */
+    pb_scalar dist_sq = PB_FIXED_MUL(dx, dx) + PB_FIXED_MUL(dy, dy);
+
+    /* Beyond max radius: no force */
+    pb_scalar max_radius_sq = PB_FIXED_MUL(max_radius, max_radius);
+    if (dist_sq > max_radius_sq) {
+        return zero;
+    }
+
+    /* Clamp to minimum distance to avoid singularity */
+    pb_scalar min_dist_sq = PB_FIXED_MUL(PB_MAGNETIC_MIN_DISTANCE, PB_MAGNETIC_MIN_DISTANCE);
+    if (dist_sq < min_dist_sq) {
+        dist_sq = min_dist_sq;
+    }
+
+    /* Distance for normalization */
+    pb_scalar dist = PB_SCALAR_SQRT(dist_sq);
+    if (dist < PB_EPSILON) {
+        return zero;
+    }
+
+    /* Force magnitude: F = strength / distance^2 */
+    pb_scalar force_mag = PB_FIXED_DIV(magnet_strength, dist_sq);
+
+    /* Normalize direction and scale by force magnitude */
+    pb_vec2 force;
+    force.x = PB_FIXED_MUL(PB_FIXED_DIV(dx, dist), force_mag);
+    force.y = PB_FIXED_MUL(PB_FIXED_DIV(dy, dist), force_mag);
+
+    return force;
+}
+
+void pb_apply_magnetic_forces(pb_shot* shot, const pb_board* board,
+                              pb_scalar radius)
+{
+    if (shot->phase != PB_SHOT_MOVING) {
+        return;
+    }
+
+    /* Accumulated force from all magnetic bubbles */
+    pb_scalar total_fx = 0;
+    pb_scalar total_fy = 0;
+
+    /* Scan board for magnetic bubbles */
+    for (int row = 0; row < board->rows; row++) {
+        int cols = pb_row_cols(row, board->cols_even, board->cols_odd);
+        for (int col = 0; col < cols; col++) {
+            pb_offset pos = {row, col};
+            const pb_bubble* b = pb_board_get_const(board, pos);
+
+            if (b == NULL || b->kind != PB_KIND_SPECIAL) {
+                continue;
+            }
+            if (b->special != PB_SPECIAL_MAGNETIC) {
+                continue;
+            }
+
+            /* Get magnetic bubble position in pixels */
+            pb_point magnet_pos = pb_offset_to_pixel(pos, radius);
+
+            /* Get strength from bubble or use default */
+            pb_scalar strength = (b->payload.magnet_strength > 0)
+                ? PB_FLOAT_TO_FIXED((float)b->payload.magnet_strength)
+                : PB_MAGNETIC_DEFAULT_STRENGTH;
+
+            /* Calculate force from this magnet */
+            pb_vec2 force = pb_magnetic_force(shot->pos, magnet_pos,
+                                              strength, PB_MAGNETIC_DEFAULT_RADIUS);
+
+            total_fx += force.x;
+            total_fy += force.y;
+        }
+    }
+
+    /* Apply accumulated force to velocity */
+    shot->velocity.x += total_fx;
+    shot->velocity.y += total_fy;
 }

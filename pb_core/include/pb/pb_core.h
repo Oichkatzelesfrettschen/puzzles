@@ -36,6 +36,9 @@
 /* Shot physics and collision */
 #include "pb_shot.h"
 
+/* Trajectory prediction for aiming */
+#include "pb_trajectory.h"
+
 /* Bubble effect system */
 #include "pb_effect.h"
 
