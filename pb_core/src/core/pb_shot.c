@@ -405,7 +405,7 @@ pb_offset pb_find_snap_cell(const pb_board* board, pb_point hit_point,
     pb_hex_neighbors_offset(center, neighbors);
 
     pb_offset best = {-1, -1};
-    pb_scalar best_dist_sq = 1e9f;
+    pb_scalar best_dist_sq = PB_INT_TO_FIXED(10000);  /* Large sentinel value */
 
     for (int i = 0; i < 6; i++) {
         pb_offset n = neighbors[i];
@@ -440,27 +440,15 @@ pb_offset pb_find_snap_cell_directed(const pb_board* board, pb_offset hit_cell,
     pb_scalar best_dot = PB_FLOAT_TO_FIXED(-2.0f);  /* Dot product ranges from -1 to 1 */
 
     /* Direction vectors for each neighbor (approximate, normalized) */
-    /* Use preprocessor for mode-specific constants */
-#if PB_USE_FIXED_POINT
-    /* Q16.16 fixed-point values: 0.5 = 32768, 0.866 = 56756 */
-    static const pb_vec2 dir_vectors[6] = {
-        {65536, 0},       /* E: (1.0, 0) */
-        {32768, -56756},  /* NE: (0.5, -0.866) */
-        {-32768, -56756}, /* NW: (-0.5, -0.866) */
-        {-65536, 0},      /* W: (-1.0, 0) */
-        {-32768, 56756},  /* SW: (-0.5, 0.866) */
-        {32768, 56756},   /* SE: (0.5, 0.866) */
+    /* Use macros for portable fixed-point values */
+    const pb_vec2 dir_vectors[6] = {
+        {PB_FLOAT_TO_FIXED(1.0f), PB_FLOAT_TO_FIXED(0.0f)},        /* E */
+        {PB_FLOAT_TO_FIXED(0.5f), PB_FLOAT_TO_FIXED(-0.866f)},     /* NE */
+        {PB_FLOAT_TO_FIXED(-0.5f), PB_FLOAT_TO_FIXED(-0.866f)},    /* NW */
+        {PB_FLOAT_TO_FIXED(-1.0f), PB_FLOAT_TO_FIXED(0.0f)},       /* W */
+        {PB_FLOAT_TO_FIXED(-0.5f), PB_FLOAT_TO_FIXED(0.866f)},     /* SW */
+        {PB_FLOAT_TO_FIXED(0.5f), PB_FLOAT_TO_FIXED(0.866f)},      /* SE */
     };
-#else
-    static const pb_vec2 dir_vectors[6] = {
-        {1.0f, 0.0f},        /* E */
-        {0.5f, -0.866f},     /* NE */
-        {-0.5f, -0.866f},    /* NW */
-        {-1.0f, 0.0f},       /* W */
-        {-0.5f, 0.866f},     /* SW */
-        {0.5f, 0.866f},      /* SE */
-    };
-#endif
 
     pb_vec2 approach_norm = pb_vec2_normalize(approach);
 

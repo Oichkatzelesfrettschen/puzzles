@@ -123,6 +123,137 @@
 #endif
 
 /*============================================================================
+ * Fixed-Point Format Selection
+ *
+ * Available formats (define ONE before including pb_core.h):
+ *   PB_FIXED_Q16_16 - Default: 32-bit, 16.16 format (range ±32768, precision 1/65536)
+ *   PB_FIXED_Q12_12 - HP48-style: 16-bit signed, 4.12 format (range ±8, precision 1/4096)
+ *   PB_FIXED_Q8_8   - Compact: 16-bit signed, 8.8 format (range ±128, precision 1/256)
+ *   PB_FIXED_Q8_1   - Ultra-compact: 8-bit signed, 7.1 format (range ±64, precision 0.5)
+ *   PB_FIXED_Q0_8   - Normalized: 8-bit unsigned, 0.8 format (range 0-0.996, precision 1/256)
+ *
+ * Use case recommendations:
+ *   Q16.16 - Desktop/modern: full precision, large coordinates
+ *   Q12.12 - 16-bit embedded: HP48-style, 56x88 playfield
+ *   Q8.8   - 8-bit embedded: small playfields, velocity/angles
+ *   Q8.1   - Extreme constraints: coarse positioning, AI weights
+ *   Q0.8   - Normalized values: percentages, interpolation factors
+ *============================================================================*/
+
+/* Fixed-point format identifiers */
+#define PB_FP_FORMAT_Q16_16  0
+#define PB_FP_FORMAT_Q12_12  1
+#define PB_FP_FORMAT_Q8_8    2
+#define PB_FP_FORMAT_Q8_1    3
+#define PB_FP_FORMAT_Q0_8    4
+
+/* Select fixed-point format */
+#ifndef PB_FIXED_FORMAT
+    #if defined(PB_FIXED_Q0_8)
+        #define PB_FIXED_FORMAT PB_FP_FORMAT_Q0_8
+    #elif defined(PB_FIXED_Q8_1)
+        #define PB_FIXED_FORMAT PB_FP_FORMAT_Q8_1
+    #elif defined(PB_FIXED_Q8_8)
+        #define PB_FIXED_FORMAT PB_FP_FORMAT_Q8_8
+    #elif defined(PB_FIXED_Q12_12) || defined(PB_USE_Q12_FIXED_POINT) && PB_USE_Q12_FIXED_POINT
+        #define PB_FIXED_FORMAT PB_FP_FORMAT_Q12_12
+    #else
+        #define PB_FIXED_FORMAT PB_FP_FORMAT_Q16_16
+    #endif
+#endif
+
+/* Auto-select for size tiers if not explicitly set */
+#if PB_USE_FIXED_POINT && !defined(PB_FIXED_Q16_16) && !defined(PB_FIXED_Q12_12) && \
+    !defined(PB_FIXED_Q8_8) && !defined(PB_FIXED_Q8_1) && !defined(PB_FIXED_Q0_8)
+    #if defined(PB_SIZE_MICRO)
+        #undef PB_FIXED_FORMAT
+        #define PB_FIXED_FORMAT PB_FP_FORMAT_Q12_12
+    #endif
+#endif
+
+/* Legacy compatibility */
+#ifndef PB_USE_Q12_FIXED_POINT
+    #if PB_FIXED_FORMAT == PB_FP_FORMAT_Q12_12
+        #define PB_USE_Q12_FIXED_POINT 1
+    #else
+        #define PB_USE_Q12_FIXED_POINT 0
+    #endif
+#endif
+
+/*============================================================================
+ * HP48-Inspired Memory Optimizations
+ * (Based on hp48-puzzle-bobble static analysis)
+ *============================================================================*/
+
+/*
+ * Compact Bubble Encoding
+ * Uses 2 bytes per bubble instead of ~16 bytes.
+ * Format: [kind:4][color:4] [flags:4][special:4]
+ * HP48 uses 1 byte; we use 2 for pb_core's special bubble support.
+ */
+#ifndef PB_USE_COMPACT_BUBBLES
+    #if defined(PB_SIZE_MICRO) || defined(PB_SIZE_MINI)
+        #define PB_USE_COMPACT_BUBBLES 1
+    #else
+        #define PB_USE_COMPACT_BUBBLES 0
+    #endif
+#endif
+
+/*
+ * Direction Index Mode
+ * Uses integer index 0-78 instead of radians for cannon direction.
+ * Index N maps to angle (12 + N*2) degrees.
+ * Wall reflection is trivial: new_index = 78 - old_index
+ * Perfect for replay/network (1 byte vs 4 bytes).
+ */
+#ifndef PB_USE_DIRECTION_INDEX
+    #define PB_USE_DIRECTION_INDEX 0
+#endif
+
+/*
+ * Game-Specific Angle Tables
+ * Uses 79-entry lookup table for firing angles only (12°-168°).
+ * Saves 70% memory vs full 256-entry table.
+ */
+#ifndef PB_USE_GAME_ANGLE_TABLE
+    #if defined(PB_SIZE_MICRO) || defined(PB_SIZE_MINI)
+        #define PB_USE_GAME_ANGLE_TABLE 1
+    #else
+        #define PB_USE_GAME_ANGLE_TABLE 0
+    #endif
+#endif
+
+/*
+ * In-Place Flood-Fill Marking
+ * Uses bubble flags directly instead of separate visited array.
+ * Saves PB_MAX_CELLS bytes during match/orphan detection.
+ */
+#ifndef PB_USE_INPLACE_MARKING
+    #if defined(PB_SIZE_MICRO)
+        #define PB_USE_INPLACE_MARKING 1
+    #else
+        #define PB_USE_INPLACE_MARKING 0
+    #endif
+#endif
+
+/*
+ * Pixel-Mask Collision
+ * Alternative collision mode using sprite overlap detection.
+ * More accurate for pixel-art renderers.
+ */
+#ifndef PB_USE_PIXEL_COLLISION
+    #define PB_USE_PIXEL_COLLISION 0
+#endif
+
+/*
+ * Screen Effects (shake, flash)
+ * Visual warning effects before row insertion.
+ */
+#ifndef PB_USE_SCREEN_EFFECTS
+    #define PB_USE_SCREEN_EFFECTS 1
+#endif
+
+/*============================================================================
  * Event Representation Optimization
  *============================================================================*/
 

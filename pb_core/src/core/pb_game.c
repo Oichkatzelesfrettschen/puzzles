@@ -297,7 +297,8 @@ void pb_game_rotate(pb_game_state* state, pb_scalar delta)
 
 pb_result pb_game_fire(pb_game_state* state)
 {
-    if (state->phase != PB_PHASE_READY && state->phase != PB_PHASE_PLAYING) {
+    if (state->phase != PB_PHASE_READY && state->phase != PB_PHASE_PLAYING &&
+        state->phase != PB_PHASE_HURRY) {
         return PB_ERR_INVALID_STATE;
     }
 
@@ -316,6 +317,10 @@ pb_result pb_game_fire(pb_game_state* state)
 
     state->phase = PB_PHASE_PLAYING;
     state->shots_fired++;
+
+    /* Track last shot frame for hurry-up system */
+    state->last_shot_frame = state->frame;
+    state->hurry_active = false;
 
     /* Log event */
     pb_event event = {
@@ -370,11 +375,29 @@ int pb_game_tick(pb_game_state* state)
     int events_generated = 0;
 
     if (state->phase != PB_PHASE_PLAYING &&
-        state->phase != PB_PHASE_ANIMATING) {
+        state->phase != PB_PHASE_ANIMATING &&
+        state->phase != PB_PHASE_HURRY) {
         return 0;
     }
 
     state->frame++;
+
+    /* Auto-fire / hurry-up system check (only when shot is idle) */
+    if (state->shot.phase == PB_SHOT_IDLE) {
+        uint32_t frames_since_shot = state->frame - state->last_shot_frame;
+
+        /* Check for hurry warning */
+        if (!state->hurry_active && frames_since_shot >= PB_HURRY_WARNING_FRAMES) {
+            state->hurry_active = true;
+            state->phase = PB_PHASE_HURRY;
+        }
+
+        /* Check for auto-fire trigger */
+        if (frames_since_shot >= PB_HURRY_AUTOFIRE_FRAMES) {
+            pb_game_fire(state);
+            events_generated++;
+        }
+    }
 
     /* Process shot */
     if (state->shot.phase == PB_SHOT_MOVING) {
@@ -485,11 +508,31 @@ int pb_game_process_matches(pb_game_state* state, pb_offset placed_cell)
         /* Pop matched bubbles */
         pb_board_remove_cells(&state->board, &matches);
 
-        /* Calculate score */
-        int base_score = count * 10;
+        /* Enhanced scoring system (km-bubble-shooter quantifier style):
+         * Score per bubble = BASE * (floor(quantifier / DIV) + 1)
+         * Quantifier increments per bubble destroyed */
+        int score = 0;
+        for (int i = 0; i < count; i++) {
+            int tier = (state->score_quantifier / PB_SCORE_QUANTIFIER_DIV) + 1;
+            score += PB_SCORE_BASE_MATCH * tier;
+            state->score_quantifier++;
+        }
+
+        /* Apply chain multiplier */
         state->combo_multiplier++;
-        int score = base_score * state->combo_multiplier;
+        if (state->combo_multiplier > PB_MAX_CHAIN_MULTIPLIER) {
+            state->combo_multiplier = PB_MAX_CHAIN_MULTIPLIER;
+        }
+        score *= state->combo_multiplier;
         state->score += (uint32_t)score;
+
+        /* Calculate garbage to send (versus mode: matched + orphans - 2) */
+        if (state->ruleset.mode == PB_MODE_VERSUS) {
+            int garbage = count - 2;
+            if (garbage > 0) {
+                state->pending_garbage_send += garbage;
+            }
+        }
 
         /* Log event with compact cell indices */
         pb_event event = {.type = PB_EVENT_BUBBLES_POPPED, .frame = state->frame};
@@ -501,6 +544,7 @@ int pb_game_process_matches(pb_game_state* state, pb_offset placed_cell)
         return count;
     }
 
+    /* No match - reset combo but keep quantifier */
     state->combo_multiplier = 0;
     return 0;
 }
@@ -513,8 +557,26 @@ int pb_game_process_orphans(pb_game_state* state)
     if (count > 0) {
         pb_board_remove_cells(&state->board, &orphans);
 
-        /* Bonus score for dropped bubbles */
-        state->score += (uint32_t)(count * 20 * state->combo_multiplier);
+        /* Enhanced orphan scoring:
+         * Orphans are worth more (PB_SCORE_BASE_ORPHAN vs PB_SCORE_BASE_MATCH)
+         * Also contribute to score quantifier */
+        int score = 0;
+        for (int i = 0; i < count; i++) {
+            int tier = (state->score_quantifier / PB_SCORE_QUANTIFIER_DIV) + 1;
+            score += PB_SCORE_BASE_ORPHAN * tier;
+            state->score_quantifier++;
+        }
+
+        /* Apply chain multiplier (cascading orphans are very valuable) */
+        if (state->combo_multiplier > 0) {
+            score *= state->combo_multiplier;
+        }
+        state->score += (uint32_t)score;
+
+        /* Orphans also contribute to garbage in versus mode */
+        if (state->ruleset.mode == PB_MODE_VERSUS) {
+            state->pending_garbage_send += count;
+        }
 
         /* Log event with compact cell indices */
         pb_event event = {.type = PB_EVENT_BUBBLES_DROPPED, .frame = state->frame};
@@ -531,6 +593,75 @@ void pb_game_next_bubble(pb_game_state* state)
 {
     state->current_bubble = state->preview_bubble;
     state->preview_bubble = generate_bubble(state);
+}
+
+/*============================================================================
+ * Garbage Exchange (Versus Mode)
+ *============================================================================*/
+
+int pb_game_get_garbage_to_send(pb_game_state* state)
+{
+    int count = state->pending_garbage_send;
+    state->pending_garbage_send = 0;
+    return count;
+}
+
+pb_result pb_game_receive_garbage(pb_game_state* state, int count)
+{
+    if (count <= 0) {
+        return PB_OK;
+    }
+
+    /* Insert garbage as new rows at top */
+    int rows_to_add = (count + state->board.cols_even - 1) / state->board.cols_even;
+
+    for (int i = 0; i < rows_to_add; i++) {
+        /* Use random colors from current board */
+        uint8_t colors = pb_board_color_mask(&state->board);
+        if (colors == 0) {
+            colors = state->ruleset.allowed_colors;
+        }
+
+        if (!pb_board_insert_row(&state->board, &state->rng, colors)) {
+            /* Row insertion caused overflow - game over */
+            state->phase = PB_PHASE_LOST;
+            pb_event lose_event = {
+                .type = PB_EVENT_GAME_OVER,
+                .frame = state->frame
+            };
+            pb_game_add_event(state, &lose_event);
+            return PB_ERR_INVALID_STATE;
+        }
+    }
+
+    /* Log garbage event */
+    pb_event event = {
+        .type = PB_EVENT_GARBAGE_RECEIVED,
+        .frame = state->frame,
+        .data.garbage = {0, (uint8_t)count}
+    };
+    pb_game_add_event(state, &event);
+
+    return PB_OK;
+}
+
+bool pb_game_is_hurry(const pb_game_state* state)
+{
+    return state->hurry_active || state->phase == PB_PHASE_HURRY;
+}
+
+uint32_t pb_game_get_hurry_countdown(const pb_game_state* state)
+{
+    if (state->shot.phase != PB_SHOT_IDLE) {
+        return 0;
+    }
+
+    uint32_t frames_since_shot = state->frame - state->last_shot_frame;
+    if (frames_since_shot >= PB_HURRY_AUTOFIRE_FRAMES) {
+        return 0;
+    }
+
+    return PB_HURRY_AUTOFIRE_FRAMES - frames_since_shot;
 }
 
 /*============================================================================

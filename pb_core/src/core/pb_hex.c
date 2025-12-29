@@ -45,6 +45,50 @@ static const int offset_neighbors_odd[6][2] = {
 };
 
 /*============================================================================
+ * Linear Array Neighbor Offsets (HP48-inspired)
+ *
+ * Pre-computed offsets for direct linear array indexing.
+ * These avoid coordinate conversion overhead in tight loops.
+ *
+ * For a board with PB_MAX_COLS columns per row:
+ *   Linear index = row * PB_MAX_COLS + col
+ *
+ * Even row: cell at (row, col) has neighbors:
+ *   E:  col+1         -> offset +1
+ *   NE: col, row-1    -> offset -PB_MAX_COLS
+ *   NW: col-1, row-1  -> offset -PB_MAX_COLS - 1
+ *   W:  col-1         -> offset -1
+ *   SW: col-1, row+1  -> offset +PB_MAX_COLS - 1
+ *   SE: col, row+1    -> offset +PB_MAX_COLS
+ *
+ * Odd row: cell at (row, col) has neighbors:
+ *   E:  col+1         -> offset +1
+ *   NE: col+1, row-1  -> offset -PB_MAX_COLS + 1
+ *   NW: col, row-1    -> offset -PB_MAX_COLS
+ *   W:  col-1         -> offset -1
+ *   SW: col, row+1    -> offset +PB_MAX_COLS
+ *   SE: col+1, row+1  -> offset +PB_MAX_COLS + 1
+ *============================================================================*/
+
+const int8_t pb_neighbor_offsets_even[6] = {
+    +1,                     /* E  */
+    -(int8_t)PB_MAX_COLS,               /* NE */
+    -(int8_t)PB_MAX_COLS - 1,           /* NW */
+    -1,                     /* W  */
+    +(int8_t)PB_MAX_COLS - 1,           /* SW */
+    +(int8_t)PB_MAX_COLS,               /* SE */
+};
+
+const int8_t pb_neighbor_offsets_odd[6] = {
+    +1,                     /* E  */
+    -(int8_t)PB_MAX_COLS + 1,           /* NE */
+    -(int8_t)PB_MAX_COLS,               /* NW */
+    -1,                     /* W  */
+    +(int8_t)PB_MAX_COLS,               /* SW */
+    +(int8_t)PB_MAX_COLS + 1,           /* SE */
+};
+
+/*============================================================================
  * Coordinate Conversions
  *============================================================================*/
 

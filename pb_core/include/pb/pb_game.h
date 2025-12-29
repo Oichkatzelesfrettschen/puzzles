@@ -187,6 +187,40 @@ void pb_game_clear_events(pb_game_state* state);
 void pb_game_add_event(pb_game_state* state, const pb_event* event);
 
 /*============================================================================
+ * Garbage Exchange (Versus Mode)
+ *============================================================================*/
+
+/**
+ * Get pending garbage to send to opponent.
+ * Returns the count and resets the counter.
+ *
+ * @param state Game state
+ * @return      Number of garbage bubbles to send
+ */
+int pb_game_get_garbage_to_send(pb_game_state* state);
+
+/**
+ * Receive garbage from opponent.
+ * Spawns random bubbles from top or inserts new row.
+ *
+ * @param state  Game state
+ * @param count  Number of garbage bubbles
+ * @return       PB_OK on success, error if game over
+ */
+pb_result pb_game_receive_garbage(pb_game_state* state, int count);
+
+/**
+ * Check if hurry-up warning is active.
+ */
+bool pb_game_is_hurry(const pb_game_state* state);
+
+/**
+ * Get frames remaining until auto-fire.
+ * Returns 0 if shot is in flight or auto-fire triggered.
+ */
+uint32_t pb_game_get_hurry_countdown(const pb_game_state* state);
+
+/*============================================================================
  * Playfield Geometry
  *============================================================================*/
 

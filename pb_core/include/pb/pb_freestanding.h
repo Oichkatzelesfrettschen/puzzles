@@ -15,6 +15,9 @@
 
 #include "pb_config.h"
 
+/* Freestanding requires stddef.h for NULL and size_t */
+#include <stddef.h>
+
 /*============================================================================
  * Automatic Freestanding Detection
  *============================================================================*/
@@ -55,6 +58,10 @@
 #define pb_fabsf    fabsf
 #define pb_round    round
 #define pb_roundf   roundf
+#define pb_powf     powf
+#define pb_cbrtf    cbrtf
+#define pb_atan2f   atan2f
+#define pb_fmodf    fmodf
 
 #else /* PB_FREESTANDING */
 
@@ -111,6 +118,18 @@ PB_INLINE unsigned int pb_strlen(const char* s)
     unsigned int len = 0;
     while (*s++) len++;
     return len;
+}
+
+PB_INLINE char* pb_strncpy(char* dest, const char* src, unsigned int n)
+{
+    unsigned int i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = '\0';
+    }
+    return dest;
 }
 
 /*============================================================================
@@ -220,6 +239,75 @@ static const int16_t pb_sin_table[256] = {
 #define PB_FP_2PI     411775
 #define PB_FP_HALF_PI 102944
 
+/*============================================================================
+ * Game-Specific Angle Tables (HP48-inspired)
+ *
+ * Uses 79-entry lookup tables covering only firing angles (12°-168°).
+ * This saves 70% memory compared to full 256-entry tables.
+ * Values extracted from hp48-puzzle-bobble implementation.
+ *
+ * Format: Q12 fixed-point (value * 4096)
+ * Index 0 = 12°, Index 78 = 168°, Step = 2°
+ *============================================================================*/
+
+#if PB_USE_GAME_ANGLE_TABLE
+
+/*
+ * Sine lookup for firing angles only (12° to 168° in 2° steps)
+ * Q12 format: sin(angle) * 4096
+ * Index N corresponds to angle (12 + N*2) degrees
+ */
+static const int16_t pb_game_sin_table[79] = {
+    /* 12°-26° */   852,  991, 1129, 1266, 1401, 1534, 1666, 1796,
+    /* 28°-42° */  1923, 2048, 2171, 2290, 2407, 2521, 2631, 2739,
+    /* 44°-58° */  2842, 2942, 3039, 3131, 3219, 3303, 3383, 3458,
+    /* 60°-74° */  3528, 3593, 3653, 3708, 3758, 3802, 3841, 3875,
+    /* 76°-90° */  3902, 3924, 3940, 3951, 3956, 3956, 3951, 4096,
+    /* 92°-106° */ 4094, 4086, 4074, 4056, 4034, 4006, 3974, 3937,
+    /* 108°-122° */3895, 3848, 3797, 3742, 3682, 3618, 3550, 3478,
+    /* 124°-138° */3401, 3321, 3237, 3149, 3058, 2963, 2865, 2763,
+    /* 140°-154° */2658, 2550, 2439, 2325, 2209, 2089, 1967, 1843,
+    /* 156°-168° */1716, 1588, 1457, 1325, 1191, 1056,  920
+};
+
+/*
+ * Cosine lookup for firing angles only (12° to 168° in 2° steps)
+ * Q12 format: cos(angle) * 4096
+ * Note: Cosine values go negative after 90°
+ */
+static const int16_t pb_game_cos_table[79] = {
+    /* 12°-26° */  4006, 3974, 3937, 3895, 3849, 3798, 3742, 3681,
+    /* 28°-42° */  3617, 3547, 3474, 3396, 3314, 3228, 3138, 3044,
+    /* 44°-58° */  2946, 2845, 2740, 2632, 2521, 2407, 2290, 2171,
+    /* 60°-74° */  2048, 1923, 1796, 1666, 1534, 1401, 1266, 1129,
+    /* 76°-90° */   991,  852,  711,  570,  428,  286,  143,    0,
+    /* 92°-106° */ -143, -286, -428, -570, -711, -852, -991,-1129,
+    /* 108°-122° */-1266,-1401,-1534,-1666,-1796,-1923,-2048,-2170,
+    /* 124°-138° */-2290,-2407,-2521,-2632,-2740,-2845,-2946,-3044,
+    /* 140°-154° */-3138,-3228,-3314,-3396,-3474,-3547,-3617,-3681,
+    /* 156°-168° */-3742,-3798,-3849,-3895,-3937,-3974,-4006
+};
+
+/*
+ * Game-specific trig functions using direction index.
+ * Input: direction index 0-78 (maps to 12°-168°)
+ * Output: Q12 or Q16 fixed-point value
+ *
+ * Note: Uses uint8_t instead of pb_direction_index because this header
+ * is included before pb_types.h defines that type.
+ */
+PB_INLINE int16_t pb_game_sin(uint8_t idx) {
+    if (idx > 78) idx = 78;
+    return pb_game_sin_table[idx];
+}
+
+PB_INLINE int16_t pb_game_cos(uint8_t idx) {
+    if (idx > 78) idx = 78;
+    return pb_game_cos_table[idx];
+}
+
+#endif /* PB_USE_GAME_ANGLE_TABLE */
+
 /*
  * Fixed-point sine.
  * Input: angle in Q16.16 radians
@@ -281,6 +369,102 @@ PB_INLINE pb_fixed_t pb_fp_floor(pb_fixed_t x)
 #define pb_roundf(x) ((float)pb_round(x))
 
 /*============================================================================
+ * Additional Math Functions (for color/CVD - less critical on embedded)
+ *============================================================================*/
+
+/*
+ * Fixed-point power function approximation.
+ * For freestanding, we use a simple integer power loop for integer exponents,
+ * or return 1.0 for fractional exponents (not accurate but prevents linker errors).
+ */
+PB_INLINE float pb_powf_approx(float base, float exp)
+{
+    /* Handle common cases */
+    if (exp == 0.0f) return 1.0f;
+    if (exp == 1.0f) return base;
+    if (exp == 2.0f) return base * base;
+    if (exp == 0.5f) return (float)pb_sqrtf(base);
+
+    /* For gamma correction (2.4), use sqrt approximation: x^2.4 ≈ x^2 * sqrt(x) */
+    if (exp > 2.0f && exp < 3.0f) {
+        return base * base * (float)pb_sqrtf(base);
+    }
+
+    /* Fallback: linear approximation (not accurate!) */
+    return base;
+}
+
+/*
+ * Cube root approximation using Newton-Raphson.
+ * cbrt(x) = x^(1/3)
+ */
+PB_INLINE float pb_cbrtf_approx(float x)
+{
+    if (x == 0.0f) return 0.0f;
+
+    float sign = (x < 0.0f) ? -1.0f : 1.0f;
+    x = (x < 0.0f) ? -x : x;
+
+    /* Initial guess using sqrt: cbrt(x) ≈ sqrt(x) for x near 1 */
+    float guess = (float)pb_sqrtf(x);
+    if (guess < 0.1f) guess = 0.5f;
+
+    /* Newton-Raphson: y = (2*y + x/(y*y)) / 3 */
+    for (int i = 0; i < 6; i++) {
+        float y2 = guess * guess;
+        if (y2 < 0.0001f) break;
+        guess = (2.0f * guess + x / y2) / 3.0f;
+    }
+
+    return sign * guess;
+}
+
+/*
+ * atan2 approximation using polynomial.
+ * Returns angle in radians.
+ */
+PB_INLINE float pb_atan2f_approx(float y, float x)
+{
+    const float PI = 3.14159265358979323846f;
+    const float PI_2 = PI / 2.0f;
+
+    if (x == 0.0f) {
+        if (y > 0.0f) return PI_2;
+        if (y < 0.0f) return -PI_2;
+        return 0.0f;
+    }
+
+    float abs_y = (y < 0.0f) ? -y : y;
+    float abs_x = (x < 0.0f) ? -x : x;
+    float a = (abs_x < abs_y) ? abs_x / abs_y : abs_y / abs_x;
+    float s = a * a;
+
+    /* Polynomial approximation for atan */
+    float r = ((-0.0464964749f * s + 0.15931422f) * s - 0.327622764f) * s * a + a;
+
+    if (abs_y > abs_x) r = PI_2 - r;
+    if (x < 0.0f) r = PI - r;
+    if (y < 0.0f) r = -r;
+
+    return r;
+}
+
+/*
+ * Floating-point modulo.
+ */
+PB_INLINE float pb_fmodf_approx(float x, float y)
+{
+    if (y == 0.0f) return 0.0f;
+    return x - (float)((int)(x / y)) * y;
+}
+
+/* Wrappers for standard names */
+#define pb_powf(b, e)   pb_powf_approx((b), (e))
+#define pb_cbrtf(x)     pb_cbrtf_approx(x)
+#define pb_atan2f(y, x) pb_atan2f_approx((y), (x))
+#define pb_fmodf(x, y)  pb_fmodf_approx((x), (y))
+
+/*============================================================================
  * Freestanding Standard Function Aliases
  * Map standard function names to pb_* versions for source compatibility
  *============================================================================*/
@@ -289,6 +473,7 @@ PB_INLINE pb_fixed_t pb_fp_floor(pb_fixed_t x)
 #define memcpy  pb_memcpy
 #define memcmp  pb_memcmp
 #define strlen  pb_strlen
+#define strncpy pb_strncpy
 #define sqrtf   pb_sqrtf
 #define sqrt    pb_sqrt
 #define sinf    pb_sinf
@@ -301,6 +486,10 @@ PB_INLINE pb_fixed_t pb_fp_floor(pb_fixed_t x)
 #define floor   pb_floor
 #define roundf  pb_roundf
 #define round   pb_round
+#define powf    pb_powf
+#define cbrtf   pb_cbrtf
+#define atan2f  pb_atan2f
+#define fmodf   pb_fmodf
 
 #endif /* PB_FREESTANDING */
 

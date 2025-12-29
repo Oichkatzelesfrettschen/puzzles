@@ -94,6 +94,49 @@ int pb_rng_pick_color(pb_rng* rng, uint8_t allowed_mask);
  */
 uint32_t pb_rng_checksum(const pb_rng* rng);
 
+/*============================================================================
+ * Hardware Entropy Mixing (HP48-inspired)
+ *
+ * HP48 uses timer + CRC register for entropy.
+ * We provide platform-agnostic entropy mixing that can incorporate:
+ * - High-resolution timers (RDTSC, cycle counters)
+ * - Hardware RNG (RDSEED, /dev/urandom)
+ * - User input timing jitter
+ *============================================================================*/
+
+/**
+ * Mix additional entropy into RNG state.
+ * Does NOT reset the RNG - combines new entropy with existing state.
+ *
+ * @param rng     RNG state to mix into
+ * @param entropy Raw entropy value to mix
+ */
+void pb_rng_mix_entropy(pb_rng* rng, uint64_t entropy);
+
+/**
+ * Collect platform-specific hardware entropy.
+ * Falls back to time-based entropy if no hardware RNG available.
+ *
+ * @return  Raw entropy value suitable for pb_rng_mix_entropy()
+ */
+uint64_t pb_rng_collect_entropy(void);
+
+/**
+ * Reseed RNG by mixing in fresh hardware entropy.
+ * Useful after long idle periods or for security-sensitive contexts.
+ *
+ * @param rng RNG state to reseed
+ */
+void pb_rng_reseed(pb_rng* rng);
+
+/**
+ * Create a non-deterministic RNG by seeding from hardware entropy.
+ * Use this for single-player games where reproducibility isn't needed.
+ *
+ * @param rng RNG state to initialize
+ */
+void pb_rng_seed_random(pb_rng* rng);
+
 #ifdef __cplusplus
 }
 #endif

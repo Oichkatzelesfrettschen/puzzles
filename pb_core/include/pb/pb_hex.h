@@ -248,6 +248,104 @@ int pb_row_cols(int row, int cols_even, int cols_odd);
  */
 int pb_hex_line(pb_cube start, pb_cube end, pb_cube* out, int max);
 
+/*============================================================================
+ * Linear Array Neighbor Iteration (HP48-inspired optimization)
+ *
+ * For tight inner loops, using pre-computed pointer offsets avoids
+ * coordinate conversion overhead. The board is stored as a linear array
+ * with row-major order: index = row * PB_MAX_COLS + col
+ *
+ * HP48 uses this for match/orphan detection with direct pointer arithmetic.
+ *============================================================================*/
+
+/**
+ * Pre-computed neighbor offsets for linear array access.
+ * Even and odd rows have different offsets due to hex staggering.
+ *
+ * Layout (odd-r, odd rows offset right):
+ *   Even row: cols_even bubbles
+ *   Odd row:  cols_odd bubbles (shifted right by half bubble width)
+ *
+ * For standard 8-column even / 7-column odd layout:
+ *   Even row neighbors: {E:+1, NE:-7, NW:-8, W:-1, SW:+8, SE:+9}
+ *   Odd row neighbors:  {E:+1, NE:-8, NW:-9, W:-1, SW:+7, SE:+8}
+ */
+extern const int8_t pb_neighbor_offsets_even[6];
+extern const int8_t pb_neighbor_offsets_odd[6];
+
+/**
+ * Get neighbor offsets for a given row parity.
+ * @param row_is_odd  True if row number is odd
+ * @return            Pointer to array of 6 neighbor offsets
+ */
+PB_INLINE const int8_t* pb_get_neighbor_offsets(bool row_is_odd) {
+    return row_is_odd ? pb_neighbor_offsets_odd : pb_neighbor_offsets_even;
+}
+
+/**
+ * Convert offset coordinates to linear array index.
+ * @param off  Offset coordinates
+ * @return     Linear index into board array
+ */
+PB_INLINE int pb_offset_to_linear(pb_offset off) {
+    return off.row * PB_MAX_COLS + off.col;
+}
+
+/**
+ * Convert linear index to offset coordinates.
+ * @param idx  Linear index
+ * @return     Offset coordinates
+ */
+PB_INLINE pb_offset pb_linear_to_offset(int idx) {
+    pb_offset off;
+    off.row = idx / PB_MAX_COLS;
+    off.col = idx % PB_MAX_COLS;
+    return off;
+}
+
+/**
+ * Iterate neighbors using linear array offsets.
+ *
+ * Example usage (avoid coordinate conversions in inner loop):
+ * @code
+ *     int idx = pb_offset_to_linear(cell);
+ *     const int8_t* offsets = pb_get_neighbor_offsets(cell.row & 1);
+ *     for (int i = 0; i < 6; i++) {
+ *         int neighbor_idx = idx + offsets[i];
+ *         if (neighbor_idx >= 0 && neighbor_idx < PB_MAX_CELLS) {
+ *             // Process neighbor at neighbor_idx
+ *         }
+ *     }
+ * @endcode
+ */
+
+/**
+ * Macro for iterating neighbors with linear array indexing.
+ * More efficient than pb_hex_neighbors_offset() for tight loops.
+ *
+ * @param idx        Linear index of center cell
+ * @param row        Row number of center cell (for parity check)
+ * @param cols       Number of columns (for bounds check)
+ * @param neighbor   Loop variable (int) for neighbor index
+ *
+ * Usage:
+ * @code
+ *     int idx = cell.row * PB_MAX_COLS + cell.col;
+ *     PB_FOR_EACH_NEIGHBOR_LINEAR(idx, cell.row, PB_MAX_COLS, neighbor_idx) {
+ *         if (board_array[neighbor_idx].kind != PB_KIND_NONE) {
+ *             // Process occupied neighbor
+ *         }
+ *     }
+ * @endcode
+ */
+#define PB_FOR_EACH_NEIGHBOR_LINEAR(idx, row, cols, neighbor) \
+    for (const int8_t* _pb_offs = pb_get_neighbor_offsets((row) & 1), \
+                      *_pb_end = _pb_offs + 6; \
+         _pb_offs < _pb_end && \
+         ((neighbor) = (idx) + *_pb_offs, 1); \
+         ++_pb_offs) \
+        if ((neighbor) >= 0 && (neighbor) < (int)((cols) * PB_MAX_ROWS))
+
 #ifdef __cplusplus
 }
 #endif

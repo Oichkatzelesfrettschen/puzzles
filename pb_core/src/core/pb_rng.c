@@ -10,6 +10,14 @@
 #include "pb/pb_rng.h"
 #include "pb/pb_config.h"
 
+/* Platform headers for entropy collection */
+#if !defined(PB_PLATFORM_FREESTANDING)
+    #include <time.h>
+    #if defined(__linux__)
+        #include <sys/random.h>
+    #endif
+#endif
+
 
 /*============================================================================
  * Internal Helpers
@@ -224,4 +232,142 @@ uint32_t pb_rng_checksum(const pb_rng* rng)
     }
 
     return hash;
+}
+
+/*============================================================================
+ * Hardware Entropy Mixing (HP48-inspired)
+ *
+ * HP48 mixes timer LSB + CRC register for entropy.
+ * We provide cross-platform entropy collection with fallbacks.
+ *============================================================================*/
+
+void pb_rng_mix_entropy(pb_rng* rng, uint64_t entropy)
+{
+    /*
+     * Mix entropy into existing state using SplitMix64.
+     * XOR with existing state to preserve any prior entropy.
+     */
+    uint64_t mixed = entropy;
+    uint64_t r0 = splitmix64(&mixed);
+    uint64_t r1 = splitmix64(&mixed);
+
+    rng->state[0] ^= (uint32_t)(r0);
+    rng->state[1] ^= (uint32_t)(r0 >> 32);
+    rng->state[2] ^= (uint32_t)(r1);
+    rng->state[3] ^= (uint32_t)(r1 >> 32);
+
+    /* Ensure state is never all zeros */
+    if (rng->state[0] == 0 && rng->state[1] == 0 &&
+        rng->state[2] == 0 && rng->state[3] == 0) {
+        rng->state[0] = 1;
+    }
+
+    /* Advance state to further mix */
+    pb_rng_next(rng);
+    pb_rng_next(rng);
+}
+
+/*
+ * Platform-specific entropy collection.
+ * Priority order:
+ *   1. Hardware RNG (RDSEED on x86, getrandom on Linux)
+ *   2. High-resolution timer (RDTSC, clock_gettime)
+ *   3. Low-resolution timer (time())
+ */
+uint64_t pb_rng_collect_entropy(void)
+{
+    uint64_t entropy = 0;
+
+#if defined(__RDSEED__) && (defined(__x86_64__) || defined(__i386__))
+    /* x86 RDSEED instruction (true hardware random) */
+    unsigned long long hw_rand;
+    if (__builtin_ia32_rdseed64_step(&hw_rand)) {
+        return (uint64_t)hw_rand;
+    }
+#endif
+
+#if defined(__linux__) && !defined(PB_PLATFORM_FREESTANDING)
+    /* Linux getrandom() syscall */
+    {
+        uint64_t urandom;
+        if (getrandom(&urandom, sizeof(urandom), GRND_NONBLOCK) == (ssize_t)sizeof(urandom)) {
+            return urandom;
+        }
+    }
+#endif
+
+#if defined(_WIN32)
+    /* Windows CryptGenRandom or BCryptGenRandom */
+    /* Not implemented - fall through to timer */
+#endif
+
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_X64)
+    /* x86 RDTSC (high-resolution cycle counter) */
+    #if defined(__GNUC__) || defined(__clang__)
+        uint32_t lo, hi;
+        __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+        entropy = ((uint64_t)hi << 32) | lo;
+    #elif defined(_MSC_VER)
+        entropy = __rdtsc();
+    #endif
+    if (entropy != 0) {
+        return entropy;
+    }
+#endif
+
+#if defined(__arm__) || defined(__aarch64__)
+    /* ARM performance counter (if available) */
+    #if defined(__aarch64__)
+        uint64_t pmccntr;
+        __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(pmccntr));
+        entropy = pmccntr;
+    #endif
+    if (entropy != 0) {
+        return entropy;
+    }
+#endif
+
+#if !defined(PB_PLATFORM_FREESTANDING)
+    /* POSIX high-resolution timer */
+    #if defined(CLOCK_MONOTONIC)
+    {
+        struct timespec ts;
+        if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+            entropy = ((uint64_t)ts.tv_sec << 32) ^ (uint64_t)ts.tv_nsec;
+            return entropy;
+        }
+    }
+    #endif
+
+    /* Fallback: standard time() */
+    entropy = (uint64_t)time(NULL);
+    /* Mix in address of stack variable for slight entropy */
+    entropy ^= (uint64_t)(uintptr_t)&entropy;
+#else
+    /* Freestanding: no OS, use static counter + compile-time values */
+    static uint32_t counter = 0;
+    entropy = (uint64_t)(++counter);
+    entropy ^= (uint64_t)__LINE__ << 16;
+    entropy ^= (uint64_t)(uintptr_t)&entropy;
+#endif
+
+    return entropy;
+}
+
+void pb_rng_reseed(pb_rng* rng)
+{
+    pb_rng_mix_entropy(rng, pb_rng_collect_entropy());
+}
+
+void pb_rng_seed_random(pb_rng* rng)
+{
+    /* Collect multiple entropy samples for initial seed */
+    uint64_t e1 = pb_rng_collect_entropy();
+    uint64_t e2 = pb_rng_collect_entropy();
+
+    /* Combine samples */
+    pb_rng_seed(rng, e1 ^ (e2 << 17) ^ (e2 >> 47));
+
+    /* Mix in one more sample */
+    pb_rng_mix_entropy(rng, pb_rng_collect_entropy());
 }

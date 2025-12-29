@@ -290,6 +290,9 @@ int pb_find_targets(const pb_board* board, pb_offset origin,
             }
         }
         break;
+
+    default:
+        break;
     }
 
     return result->count;
@@ -368,6 +371,9 @@ pb_result pb_execute_effect(pb_board* board, pb_offset origin,
         break;
 
     case PB_ACTION_COUNT:
+        break;
+
+    default:
         break;
     }
 

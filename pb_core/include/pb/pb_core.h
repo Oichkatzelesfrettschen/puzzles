@@ -72,6 +72,12 @@
 /* Level solver and validator */
 #include "pb_solver.h"
 
+/* A* and JPS pathfinding for hex grids */
+#include "pb_path.h"
+
+/* 8-bit/voxel style renderer abstraction */
+#include "pb_render.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,7 +87,7 @@ extern "C" {
  *============================================================================*/
 
 #define PB_VERSION_MAJOR 0
-#define PB_VERSION_MINOR 1
+#define PB_VERSION_MINOR 2
 #define PB_VERSION_PATCH 0
 
 /**
@@ -97,7 +103,7 @@ static inline uint32_t pb_version(void)
  */
 static inline const char* pb_version_string(void)
 {
-    return "0.1.0";
+    return "0.2.0";
 }
 
 #ifdef __cplusplus
