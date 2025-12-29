@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pb-core.dev/schemas/replay.schema.json",
+  "title": "PB Replay",
+  "description": "Deterministic replay data for game sessions",
+  "type": "object",
+  "required": ["version", "seed", "events"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "level_id": { "type": "string" },
+        "level_name": { "type": "string" },
+        "ruleset_id": { "type": "string" },
+        "player_name": { "type": "string" },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "duration_frames": { "type": "integer" },
+        "final_score": { "type": "integer" },
+        "outcome": {
+          "type": "string",
+          "enum": ["won", "lost", "abandoned"]
+        }
+      }
+    },
+    "seed": {
+      "type": "integer",
+      "description": "64-bit RNG seed (stored as string for JSON compatibility)",
+      "minimum": 0
+    },
+    "seed_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{16}$",
+      "description": "64-bit seed as hex string (alternative to seed)"
+    },
+    "initial_state": {
+      "type": "object",
+      "description": "Optional board state if not starting from level default",
+      "properties": {
+        "board_checksum": { "type": "integer" },
+        "rng_state": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" },
+      "description": "Ordered list of input events"
+    },
+    "checkpoints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/checkpoint" },
+      "description": "Periodic state checksums for verification"
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": ["frame", "type"],
+      "properties": {
+        "frame": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Frame number when event occurred"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "fire",
+            "rotate_left",
+            "rotate_right",
+            "switch_bubble",
+            "pause",
+            "unpause"
+          ]
+        },
+        "data": {
+          "type": "object",
+          "description": "Event-specific data",
+          "properties": {
+            "angle": {
+              "type": "number",
+              "description": "Fire angle in radians"
+            },
+            "delta": {
+              "type": "number",
+              "description": "Rotation delta"
+            }
+          }
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "required": ["frame", "checksum"],
+      "properties": {
+        "frame": {
+          "type": "integer",
+          "description": "Frame number of checkpoint"
+        },
+        "checksum": {
+          "type": "integer",
+          "description": "FNV-1a hash of game state"
+        },
+        "board_checksum": {
+          "type": "integer",
+          "description": "Board-only checksum"
+        },
+        "rng_checksum": {
+          "type": "integer",
+          "description": "RNG state checksum"
+        },
+        "score": {
+          "type": "integer",
+          "description": "Score at checkpoint"
+        }
+      }
+    }
+  }
+}

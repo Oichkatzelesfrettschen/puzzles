@@ -13,3 +13,6 @@
 [submodule "frozen-bubble"]
 	path = frozen-bubble
 	url = git@github.com:Oichkatzelesfrettschen/frozen-bubble.git
+[submodule "colorblindness"]
+	path = colorblindness
+	url = git@github.com:Oichkatzelesfrettschen/Colorblindness.git

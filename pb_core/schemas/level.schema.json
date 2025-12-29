@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pb-core.dev/schemas/level.schema.json",
+  "title": "PB Level",
+  "description": "Puzzle Bobble level definition",
+  "type": "object",
+  "required": ["version", "name", "grid"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Schema version (e.g., '1.0')"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Level display name"
+    },
+    "author": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Level creator"
+    },
+    "difficulty": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Difficulty rating (1=easy, 10=expert)"
+    },
+    "grid": {
+      "type": "object",
+      "required": ["cols_even", "cols_odd", "rows", "bubbles"],
+      "properties": {
+        "cols_even": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "default": 8
+        },
+        "cols_odd": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "default": 7
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 12
+        },
+        "bubbles": {
+          "type": "array",
+          "description": "Row-major bubble data, null for empty cells",
+          "items": {
+            "oneOf": [
+              { "type": "null" },
+              { "$ref": "#/$defs/bubble" }
+            ]
+          }
+        }
+      }
+    },
+    "objectives": {
+      "type": "object",
+      "description": "Win conditions",
+      "properties": {
+        "clear_all": {
+          "type": "boolean",
+          "default": true
+        },
+        "target_score": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_shots": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "time_limit_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ruleset_override": {
+      "$ref": "ruleset.schema.json",
+      "description": "Optional ruleset overrides for this level"
+    },
+    "theme": {
+      "type": "string",
+      "description": "Theme ID to use for this level"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional level metadata",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "min_solver_shots": {
+          "type": "integer",
+          "description": "Optimal solution shot count (computed)"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "bubble": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["colored", "special", "blocker", "wildcard"]
+        },
+        "color": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7,
+          "description": "Color index (0-7)"
+        },
+        "special": {
+          "type": "string",
+          "enum": [
+            "bomb", "lightning", "star", "magnetic",
+            "rainbow", "shifter", "portal", "ice",
+            "split", "virus", "key", "lock"
+          ]
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["indestructible", "sticky", "ghost", "frozen", "anchor"]
+          }
+        },
+        "payload": {
+          "type": "object",
+          "description": "Special-type-specific data",
+          "properties": {
+            "timer": { "type": "integer" },
+            "radius": { "type": "integer" },
+            "target": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

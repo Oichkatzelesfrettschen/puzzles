@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pb-core.dev/schemas/theme.schema.json",
+  "title": "PB Theme",
+  "description": "Visual theme with CVD-accessible color palette",
+  "type": "object",
+  "required": ["version", "name", "palette"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Theme display name"
+    },
+    "author": {
+      "type": "string"
+    },
+    "palette": {
+      "type": "object",
+      "required": ["colors"],
+      "properties": {
+        "colors": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/color_entry" },
+          "description": "Bubble colors indexed 0-7"
+        },
+        "background": { "$ref": "#/$defs/color" },
+        "grid_line": { "$ref": "#/$defs/color" },
+        "text": { "$ref": "#/$defs/color" },
+        "highlight": { "$ref": "#/$defs/color" }
+      }
+    },
+    "patterns": {
+      "type": "array",
+      "description": "Pattern overlays for CVD discrimination",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "svg": { "type": "string", "description": "SVG pattern definition" },
+          "bitmap": { "type": "string", "description": "Base64 encoded bitmap" }
+        }
+      }
+    },
+    "cvd_safe": {
+      "type": "object",
+      "description": "CVD accessibility verification",
+      "properties": {
+        "verified": {
+          "type": "boolean",
+          "description": "Has this palette been CVD-tested?"
+        },
+        "min_contrast": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Minimum Oklab ΔE between any two colors"
+        },
+        "simulations": {
+          "type": "object",
+          "description": "CVD simulation verification results",
+          "properties": {
+            "protanopia": { "$ref": "#/$defs/cvd_result" },
+            "deuteranopia": { "$ref": "#/$defs/cvd_result" },
+            "tritanopia": { "$ref": "#/$defs/cvd_result" }
+          }
+        }
+      }
+    },
+    "visual_style": {
+      "type": "object",
+      "properties": {
+        "bubble_outline_width": { "type": "number", "default": 2 },
+        "bubble_shine": { "type": "boolean", "default": true },
+        "grid_visible": { "type": "boolean", "default": false },
+        "trajectory_style": {
+          "type": "string",
+          "enum": ["dotted", "dashed", "solid", "none"],
+          "default": "dotted"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "sRGB hex color"
+        },
+        {
+          "type": "object",
+          "required": ["L", "C", "h"],
+          "properties": {
+            "L": { "type": "number", "minimum": 0, "maximum": 1 },
+            "C": { "type": "number", "minimum": 0 },
+            "h": { "type": "number", "minimum": 0, "maximum": 360 }
+          },
+          "description": "Oklch color"
+        }
+      ]
+    },
+    "color_entry": {
+      "type": "object",
+      "required": ["srgb"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Color name for accessibility (e.g., 'red', 'blue')"
+        },
+        "srgb": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "oklch": {
+          "type": "object",
+          "properties": {
+            "L": { "type": "number" },
+            "C": { "type": "number" },
+            "h": { "type": "number" }
+          }
+        },
+        "outline": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "Outline color (auto-generated if omitted)"
+        },
+        "pattern_id": {
+          "type": "integer",
+          "description": "Pattern overlay index for CVD mode"
+        }
+      }
+    },
+    "cvd_result": {
+      "type": "object",
+      "properties": {
+        "min_delta_e": {
+          "type": "number",
+          "description": "Minimum Oklab ΔE after simulation"
+        },
+        "confusable_pairs": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Color index pairs that may be confused"
+        },
+        "pass": {
+          "type": "boolean",
+          "description": "Meets minimum contrast threshold"
+        }
+      }
+    }
+  }
+}
